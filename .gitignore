@@ -1,0 +1,7 @@
+.gradle/
+build/
+.tools/
+.idea/
+*.iml
+.runtime/
+.obsidian/

@@ -1,0 +1,5 @@
+schema-version: 1
+prefix: '[Wildlands] '
+no-permission: 'You do not have permission to use this command.'
+players-only: 'This command requires a player.'
+unknown-command: 'Unknown command. Use /wildlands help.'

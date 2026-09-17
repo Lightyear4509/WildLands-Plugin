@@ -1,0 +1,17 @@
+name: GGWPWildlands
+version: '${version}'
+main: gg.ggwp.wildlands.core.WildlandsPlugin
+api-version: '26.2'
+description: GGWP Wildlands foundation
+softdepend: [Geyser-Spigot, floodgate]
+commands:
+  wildlands:
+    description: Wildlands status and administration
+    usage: /wildlands help
+permissions:
+  ggwpwildlands.use:
+    default: true
+  ggwpwildlands.admin:
+    default: op
+  ggwpwildlands.admin.debug:
+    default: op

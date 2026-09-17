@@ -1,0 +1,8 @@
+schema-version: 1
+storage:
+  file: wildlands.db
+  save-interval-seconds: 30
+modules:
+  player-records: true
+debug:
+  enabled: true
