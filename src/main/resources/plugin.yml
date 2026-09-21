@@ -8,6 +8,9 @@ commands:
   wildlands:
     description: Wildlands status and administration
     usage: /wildlands help
+  hydration:
+    description: Show hydration and HUD preference
+    usage: /hydration
 permissions:
   ggwpwildlands.use:
     default: true

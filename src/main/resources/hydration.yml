@@ -1,0 +1,45 @@
+schema-version: 1
+# Evaluated every five seconds; no depletion while offline, dead, or in creative/spectator.
+# At rest, a full meter lasts approximately 67 minutes without drinking.
+depletion:
+  per-second: 0.025
+  sprint-multiplier: 2.0
+  swim-multiplier: 1.5
+  combat-multiplier: 1.5
+  combat-memory-seconds: 10
+dehydration:
+  recovery-below: 25
+  recovery-multiplier: 0.5
+  severe-at: 0
+  damage-delay-seconds: 120
+  damage-interval-seconds: 30
+  damage: 1
+boiling-seconds: 20
+hud:
+  default-enabled: true
+respawn-hydration: 70
+water:
+  clean:
+    restore: 25
+    illness-chance: 0
+    illness-seconds: 0
+  untreated:
+    restore: 20
+    illness-chance: 0.1
+    illness-seconds: 20
+  questionable:
+    restore: 20
+    illness-chance: 0.25
+    illness-seconds: 30
+  contaminated:
+    restore: 15
+    illness-chance: 0.45
+    illness-seconds: 40
+  salt:
+    restore: -8
+    illness-chance: 0
+    illness-seconds: 0
+
+# Explicit source blocks until custom world generation supplies spring locations.
+# Example: [{world: world, x: 10, y: 70, z: 20}]
+springs: []

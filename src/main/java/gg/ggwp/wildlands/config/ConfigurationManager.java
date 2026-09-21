@@ -8,8 +8,8 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 public final class ConfigurationManager {
-    public record Snapshot(Settings settings, Map<String, String> messages) {
-        public Snapshot { messages = Map.copyOf(messages); }
+    public record Snapshot(Settings settings, Map<String, String> messages, HydrationSettings hydration) {
+        public Snapshot { messages = Map.copyOf(messages); java.util.Objects.requireNonNull(hydration); }
         public String message(String key) { return messages.get("prefix") + messages.get(key); }
     }
     private final Path directory;
@@ -28,7 +28,7 @@ public final class ConfigurationManager {
                 throw new IllegalArgumentException("messages.yml: " + key + " must be text of at most 512 characters");
             values.put(key, value);
         }
-        return new Snapshot(Settings.parse(config), values);
+        return new Snapshot(Settings.parse(config), values, HydrationSettings.parse(read("hydration.yml")));
     }
 
     private YamlConfiguration read(String name) throws IOException, InvalidConfigurationException {

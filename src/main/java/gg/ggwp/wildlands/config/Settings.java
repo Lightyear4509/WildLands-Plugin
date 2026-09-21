@@ -21,11 +21,14 @@ public record Settings(String databaseFile, int saveIntervalSeconds, Map<String,
         require(section != null, "modules must be a mapping");
         var modules = new java.util.LinkedHashMap<String, Boolean>();
         for (String key : section.getKeys(false)) {
-            require(key.equals("player-records"), "Unknown module: " + key + " (later milestones are not installed)");
+            require(java.util.Set.of("player-records", "hydration", "hud").contains(key), "Unknown module: " + key + " (later milestones are not installed)");
             require(section.get(key) instanceof Boolean, "modules." + key + " must be true or false");
             modules.put(key, section.getBoolean(key));
         }
         require(modules.containsKey("player-records"), "modules.player-records is required");
+        // Existing foundation installs explicitly opt into new gameplay modules.
+        modules.putIfAbsent("hydration", false);
+        modules.putIfAbsent("hud", false);
         return new Settings((String) file, (int) interval, modules, yaml.getBoolean("debug.enabled"));
     }
 

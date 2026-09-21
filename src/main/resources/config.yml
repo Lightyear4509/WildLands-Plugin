@@ -4,5 +4,7 @@ storage:
   save-interval-seconds: 30
 modules:
   player-records: true
+  hydration: true
+  hud: true
 debug:
   enabled: true

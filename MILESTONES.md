@@ -5,7 +5,7 @@ The current user goal is to complete all nine milestones from SPEC.md, test each
 | Milestone | Scope | Current state |
 | --- | --- | --- |
 | 1 | Foundation, modules, configuration, SQLite, UUID records, commands, crossplay bridges, debug | Accepted: 26 automated tests, real server checks, Java/Bedrock commands and reconnects, permission denial, and restart persistence passed |
-| 2 | Hydration, water identification, drinking, treatment/boiling, HUD, persistence | Not started |
+| 2 | Hydration, water identification, drinking, treatment/boiling, HUD, persistence | Accepted: 54 automated tests, Paper lifecycle/configuration checks, and Java/Bedrock hydration, water-source, boiling, rainwater, HUD, permission, and restart-persistence validation passed |
 | 3 | Temperature, wetness, shade, fire warmth, shelter | Not started |
 | 4 | Seasons, rainfall, temperature effects, crops, weather | Not started |
 | 5 | Deterministic rainforest regions and terrain, disposable development worlds | Not started |

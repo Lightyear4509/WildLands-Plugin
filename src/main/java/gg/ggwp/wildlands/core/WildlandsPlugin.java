@@ -19,8 +19,10 @@ public final class WildlandsPlugin extends JavaPlugin {
     private ConfigurationManager.Snapshot config;
     private final ModuleManager modules = new ModuleManager();
     private PlayerManager players;
+    private gg.ggwp.wildlands.survival.HydrationService hydration;
     private CrossplayService crossplay;
     private boolean reloading;
+    private final gg.ggwp.wildlands.survival.CauldronWater cauldronWater = new gg.ggwp.wildlands.survival.CauldronWater();
 
     @Override public void onEnable() {
         state = State.STARTING;
@@ -33,6 +35,10 @@ public final class WildlandsPlugin extends JavaPlugin {
         var command = Objects.requireNonNull(getCommand("wildlands"), "Missing wildlands command");
         command.setExecutor(handler);
         command.setTabCompleter(handler);
+        var hydrationHandler = new gg.ggwp.wildlands.commands.HydrationCommand(this);
+        var hydrationCommand = Objects.requireNonNull(getCommand("hydration"));
+        hydrationCommand.setExecutor(hydrationHandler);
+        hydrationCommand.setTabCompleter(hydrationHandler);
         storage.submit(() -> {
             var loaded = configuration.load();
             storage.open(getDataFolder().toPath().resolve(loaded.settings().databaseFile()));
@@ -41,8 +47,12 @@ public final class WildlandsPlugin extends JavaPlugin {
             if (failure != null) { failStartup(failure); return; }
             try {
                 config = loaded;
+                getServer().getPluginManager().registerEvents(cauldronWater, this);
                 players = new PlayerManager(this, storage, loaded.settings().saveIntervalSeconds());
                 modules.register(players);
+                hydration = new gg.ggwp.wildlands.survival.HydrationService(this, storage);
+                modules.register(hydration);
+                modules.register(new gg.ggwp.wildlands.ui.HudManager(this, hydration));
                 modules.apply(loaded.settings().modules());
                 state = State.READY;
                 getLogger().info("Foundation ready. Geyser: " + crossplay.geyserStatus()
@@ -64,6 +74,8 @@ public final class WildlandsPlugin extends JavaPlugin {
                 if (!candidate.settings().databaseFile().equals(config.settings().databaseFile())
                         || candidate.settings().saveIntervalSeconds() != config.settings().saveIntervalSeconds())
                     throw new IllegalArgumentException("Storage settings require a server restart; no settings changed");
+                if (candidate.hydration().boilingSeconds() != config.hydration().boilingSeconds())
+                    throw new IllegalArgumentException("Boiling duration changes require a server restart; no settings changed");
                 modules.apply(candidate.settings().modules());
                 config = candidate;
                 crossplay.refresh();
@@ -92,9 +104,11 @@ public final class WildlandsPlugin extends JavaPlugin {
         catch (Exception error) { report("Module shutdown failed", error); }
         if (storage != null) storage.close();
     }
+    public gg.ggwp.wildlands.survival.CauldronWater cauldronWater() { return cauldronWater; }
     public State state() { return state; }
     public ConfigurationManager.Snapshot configuration() { return config; }
     public ModuleManager modules() { return modules; }
+    public gg.ggwp.wildlands.survival.HydrationService hydration() { return hydration; }
     public PlayerManager players() { return players; }
     public StorageService storage() { return storage; }
     public CrossplayService crossplay() { return crossplay; }

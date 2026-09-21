@@ -16,6 +16,9 @@ public final class StorageService {
     });
     private final Database database = new Database();
     private final PlayerRepository repository = new PlayerRepository(database);
+    private final HydrationRepository hydrationRepository = new HydrationRepository(database);
+    private final Map<UUID, HydrationRecord> pendingHydration = new LinkedHashMap<>();
+    private boolean playerWriteFailed, hydrationWriteFailed;
     private final Map<UUID, PlayerRecord> pending = new LinkedHashMap<>();
     private final AtomicInteger queue = new AtomicInteger();
     private final Logger logger;
@@ -40,15 +43,41 @@ public final class StorageService {
         for (PlayerRecord record : records) pending.merge(record.uuid(), record, (a, b) ->
                 new PlayerRecord(a.uuid(), b.lastSeen() >= a.lastSeen() ? b.lastKnownName() : a.lastKnownName(),
                         Math.min(a.firstSeen(), b.firstSeen()), Math.max(a.lastSeen(), b.lastSeen())));
-        pendingCount = pending.size();
+        refreshDiagnostics();
         try {
             repository.saveBatch(pending.values());
             if (!pending.isEmpty()) lastSuccessfulSave = System.currentTimeMillis();
             pending.clear();
-            pendingCount = 0;
-            health = "OK";
-        } catch (Exception failure) { health = "WRITE_FAILED"; throw failure; }
+            playerWriteFailed = false;
+            refreshDiagnostics();
+        } catch (Exception failure) { playerWriteFailed = true; refreshDiagnostics(); throw failure; }
     }
+    public Optional<HydrationRecord> findHydration(UUID id) throws Exception {
+        HydrationRecord unsaved = pendingHydration.get(id);
+        return unsaved != null ? Optional.of(unsaved) : hydrationRepository.find(id);
+    }
+
+    public void saveHydration(Collection<HydrationRecord> records) throws Exception {
+        for (HydrationRecord record : records) pendingHydration.put(record.uuid(), record);
+        refreshDiagnostics();
+        try {
+            hydrationRepository.saveBatch(pendingHydration.values());
+            if (!pendingHydration.isEmpty()) lastSuccessfulSave = System.currentTimeMillis();
+            pendingHydration.clear();
+            hydrationWriteFailed = false;
+            refreshDiagnostics();
+        } catch (Exception failure) {
+            hydrationWriteFailed = true;
+            refreshDiagnostics();
+            throw failure;
+        }
+    }
+
+    private void refreshDiagnostics() {
+        pendingCount = pending.size() + pendingHydration.size();
+        health = playerWriteFailed || hydrationWriteFailed ? "WRITE_FAILED" : "OK";
+    }
+
     public String health() { return health; }
     public int queueSize() { return queue.get(); }
     public int pendingCount() { return pendingCount; }
@@ -62,6 +91,8 @@ public final class StorageService {
             worker.submit(() -> {
                 try { save(List.of()); }
                 catch (Exception failure) { logger.log(Level.SEVERE, "Final database flush failed; pending records could not be saved", failure); }
+                try { saveHydration(List.of()); }
+                catch (Exception failure) { logger.log(Level.SEVERE, "Final hydration flush failed; pending records could not be saved", failure); }
                 finally {
                     try { database.close(); }
                     catch (Exception failure) { logger.log(Level.SEVERE, "Database close failed", failure); }

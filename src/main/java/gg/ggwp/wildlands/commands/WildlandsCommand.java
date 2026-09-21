@@ -28,10 +28,10 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         switch (action) {
             case "help" -> {
                 if (!permitted(sender, USE)) return true;
-                say(sender, "/wildlands status | help");
-                if (sender.hasPermission(ADMIN)) say(sender, "/wildlands reload | admin modules");
+                say(sender, "/wildlands status | hud on|off | help; /hydration");
+                if (sender.hasPermission(ADMIN)) say(sender, "/wildlands reload | admin modules | admin hydration <player> <0..100>");
                 if (sender.hasPermission(DEBUG)) say(sender, "/wildlands admin debug [online-player|uuid]");
-                say(sender, "Milestone 1: foundation only. Survival systems and HUD are not installed.");
+                say(sender, "Collect and treat water to maintain hydration.");
             }
             case "status" -> {
                 if (!permitted(sender, USE)) return true;
@@ -39,8 +39,10 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
                 if (sender instanceof Player player) {
                     say(sender, "UUID: " + player.getUniqueId() + "; platform: " + plugin.crossplay().platform(player.getUniqueId()));
                     say(sender, "Record: " + plugin.players().state(player.getUniqueId()));
+                    if (plugin.hydration() != null) new HydrationCommand(plugin).status(sender);
                 }
             }
+            case "hud" -> new HydrationCommand(plugin).hud(sender, args);
             case "reload" -> {
                 if (permitted(sender, ADMIN)) {
                     if (args.length != 1) say(sender, "Usage: /wildlands reload");
@@ -58,6 +60,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
             return;
         }
         switch (args[1].toLowerCase(Locale.ROOT)) {
+            case "hydration" -> new HydrationCommand(plugin).admin(sender, args);
             case "modules" -> {
                 if (permitted(sender, ADMIN))
                     plugin.modules().states().forEach((id, state) -> say(sender, id + ": " + state));
@@ -110,14 +113,17 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         if (plugin.state() != WildlandsPlugin.State.READY) return List.of();
         List<String> options = new ArrayList<>();
         if (args.length == 1) {
-            if (sender.hasPermission(USE)) options.addAll(List.of("help", "status"));
+            if (sender.hasPermission(USE)) options.addAll(List.of("help", "status", "hud"));
             if (sender.hasPermission(ADMIN)) options.add("reload");
             if (sender.hasPermission(ADMIN) || sender.hasPermission(DEBUG)) options.add("admin");
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("hud") && sender.hasPermission(USE)) {
+            options.addAll(List.of("on", "off"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
-            if (sender.hasPermission(ADMIN)) options.add("modules");
+            if (sender.hasPermission(ADMIN)) options.addAll(List.of("modules", "hydration"));
             if (sender.hasPermission(DEBUG)) options.add("debug");
         } else if (args.length == 3 && args[0].equalsIgnoreCase("admin")
-                && args[1].equalsIgnoreCase("debug") && sender.hasPermission(DEBUG)) {
+                && ((args[1].equalsIgnoreCase("debug") && sender.hasPermission(DEBUG))
+                || (args[1].equalsIgnoreCase("hydration") && sender.hasPermission(ADMIN)))) {
             for (Player player : plugin.getServer().getOnlinePlayers())
                 if (!(sender instanceof Player viewer) || viewer.canSee(player)) options.add(player.getName());
         }
