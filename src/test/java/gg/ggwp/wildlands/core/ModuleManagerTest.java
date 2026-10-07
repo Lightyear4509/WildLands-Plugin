@@ -39,4 +39,25 @@ class ModuleManagerTest {
         assertThrows(IllegalArgumentException.class, () -> manager.register(new Module("a", new ArrayList<>())));
         assertThrows(IllegalArgumentException.class, () -> manager.apply(Map.of("unknown", true)));
     }
+
+    @Test void rollbackRestoresConfigurationBeforeRestartingPreviousModules() throws Exception {
+        var manager = new ModuleManager();
+        var setting = new java.util.concurrent.atomic.AtomicReference<>("previous");
+        var observed = new ArrayList<String>();
+        manager.register(new WildlandsModule() {
+            public String id() { return "existing"; }
+            public void enable() { observed.add(setting.get()); }
+            public void disable() {}
+        });
+        var broken = new Module("broken", new ArrayList<>());
+        broken.fail = true;
+        manager.register(broken);
+        manager.apply(Map.of("existing", true, "broken", false));
+        setting.set("candidate");
+        assertThrows(Exception.class, () -> manager.apply(
+                Map.of("existing", false, "broken", true), () -> setting.set("previous")));
+        assertEquals(List.of("previous", "previous"), observed);
+        assertEquals(ModuleManager.State.ENABLED, manager.states().get("existing"));
+        assertEquals(ModuleManager.State.DISABLED, manager.states().get("broken"));
+    }
 }

@@ -6,5 +6,8 @@ modules:
   player-records: true
   hydration: true
   hud: true
+  temperature: true
+  wetness: true
+  shelter: true
 debug:
   enabled: true

@@ -88,4 +88,8 @@ The user subsequently confirmed that both Java and Bedrock were tested and worke
 
 The user then confirmed rainwater works on both Java and Bedrock. This completes Milestone 2's live crossplay acceptance: source identification, collection, drinking, boiling, salt rejection, unsafe-water risk, dehydration/recovery, HUD controls, permissions, persistence, configuration toggles, and rainwater all have automated and/or real-client evidence appropriate to their behavior. The temporary platform force-load used for the rain test was removed.
 
+## Milestone 3 candidate startup (2026-09-21)
+
+Built `GGWPWildlands-0.3.0.jar` with 58 passing automated tests and deployed it to the same disposable Paper 26.2 server after moving the previous 0.2.0 artifact to the milestone backup. SHA-256 source and deployed artifact matched: `C0AFA71F301A55AD242BD554F3EACE34004FFF255E5569D71C43ED0A348EB088`. Paper loaded Wildlands 0.3.0, SQLite reported OK, and Geyser/Floodgate were available. The existing configuration correctly defaulted the newly introduced temperature, wetness and shelter modules to disabled; explicitly enabling their three flags and reloading produced ENABLED state for all modules. Real Java/Bedrock environment interactions remain pending.
+
 At 09:05:48 no clients were connected for further effects checks. Restored normal hydration configuration from the preserved backup; reapply deterministic illness settings only when live testing resumes. Bedrock dehydration/recovery remains a confirmed pass, while unsafe-water and rainwater observations remain pending.

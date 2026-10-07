@@ -1,12 +1,12 @@
 # Milestone execution and acceptance
 
-The current user goal is to complete all nine milestones from SPEC.md, test each thoroughly before proceeding, and commit every milestone. The original Milestone 1-only request is superseded by that goal; feature work still proceeds in milestone order.
+The current user goal is to complete all nine milestones from SPEC.md and commit every milestone. On October 7 the user revised the testing gate: defer further live Java/Bedrock checks, proceed through milestones with automated verification, and deliver one combined build for live testing at the end. The original Milestone 1-only request and per-milestone live-test gate are superseded by these instructions. Crossplay parity remains a design requirement; deferred tests are recorded as untested.
 
 | Milestone | Scope | Current state |
 | --- | --- | --- |
 | 1 | Foundation, modules, configuration, SQLite, UUID records, commands, crossplay bridges, debug | Accepted: 26 automated tests, real server checks, Java/Bedrock commands and reconnects, permission denial, and restart persistence passed |
 | 2 | Hydration, water identification, drinking, treatment/boiling, HUD, persistence | Accepted: 54 automated tests, Paper lifecycle/configuration checks, and Java/Bedrock hydration, water-source, boiling, rainwater, HUD, permission, and restart-persistence validation passed |
-| 3 | Temperature, wetness, shade, fire warmth, shelter | Not started |
+| 3 | Temperature, wetness, shade, fire warmth, shelter | Implemented; clean build and 74 tests passed; core Java/Bedrock checks passed; final live rate/balance checks deferred by user |
 | 4 | Seasons, rainfall, temperature effects, crops, weather | Not started |
 | 5 | Deterministic rainforest regions and terrain, disposable development worlds | Not started |
 | 6 | One polished wildlife species, initially Jaguar, with crossplay representation | Not started |
@@ -20,9 +20,9 @@ The current user goal is to complete all nine milestones from SPEC.md, test each
 2. Implement only that milestone and necessary prerequisites.
 3. Run relevant automated tests and a clean build; correct failures.
 4. Exercise real Paper lifecycle, persistence, configuration, and integration behavior as applicable.
-5. For gameplay, manually test Java and Bedrock through Geyser/Floodgate; record actual versions, observations, and unresolved defects.
+5. Record automated verification and any available live evidence. Defer further live Java/Bedrock acceptance to the combined build, as requested on October 7; do not mark deferred checks tested.
 6. Review every requirement, update README and crossplay matrix, and commit the milestone.
-7. Proceed only once its required acceptance checks pass. A checkpoint commit is not evidence that a pending gate passed.
+7. Proceed after implementation review, automated verification and the milestone commit. Deliver the combined plugin and a live-test checklist after all milestones; deferred checks remain explicit.
 
 ## Milestone 1 acceptance environment
 

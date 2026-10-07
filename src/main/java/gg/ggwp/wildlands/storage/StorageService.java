@@ -17,8 +17,10 @@ public final class StorageService {
     private final Database database = new Database();
     private final PlayerRepository repository = new PlayerRepository(database);
     private final HydrationRepository hydrationRepository = new HydrationRepository(database);
+    private final EnvironmentRepository environmentRepository = new EnvironmentRepository(database);
+    private final Map<UUID, EnvironmentRecord> pendingEnvironment = new LinkedHashMap<>();
     private final Map<UUID, HydrationRecord> pendingHydration = new LinkedHashMap<>();
-    private boolean playerWriteFailed, hydrationWriteFailed;
+    private boolean playerWriteFailed, hydrationWriteFailed, environmentWriteFailed;
     private final Map<UUID, PlayerRecord> pending = new LinkedHashMap<>();
     private final AtomicInteger queue = new AtomicInteger();
     private final Logger logger;
@@ -72,10 +74,23 @@ public final class StorageService {
             throw failure;
         }
     }
+    public Optional<EnvironmentRecord> findEnvironment(UUID id) throws Exception {
+        EnvironmentRecord unsaved = pendingEnvironment.get(id);
+        return unsaved != null ? Optional.of(unsaved) : environmentRepository.find(id);
+    }
+    public void saveEnvironment(Collection<EnvironmentRecord> records) throws Exception {
+        for (EnvironmentRecord record : records) pendingEnvironment.put(record.uuid(), record);
+        refreshDiagnostics();
+        try {
+            environmentRepository.saveBatch(pendingEnvironment.values());
+            if (!pendingEnvironment.isEmpty()) lastSuccessfulSave = System.currentTimeMillis();
+            pendingEnvironment.clear(); environmentWriteFailed = false; refreshDiagnostics();
+        } catch (Exception failure) { environmentWriteFailed = true; refreshDiagnostics(); throw failure; }
+    }
 
     private void refreshDiagnostics() {
-        pendingCount = pending.size() + pendingHydration.size();
-        health = playerWriteFailed || hydrationWriteFailed ? "WRITE_FAILED" : "OK";
+        pendingCount = pending.size() + pendingHydration.size() + pendingEnvironment.size();
+        health = playerWriteFailed || hydrationWriteFailed || environmentWriteFailed ? "WRITE_FAILED" : "OK";
     }
 
     public String health() { return health; }
@@ -93,6 +108,8 @@ public final class StorageService {
                 catch (Exception failure) { logger.log(Level.SEVERE, "Final database flush failed; pending records could not be saved", failure); }
                 try { saveHydration(List.of()); }
                 catch (Exception failure) { logger.log(Level.SEVERE, "Final hydration flush failed; pending records could not be saved", failure); }
+                try { saveEnvironment(List.of()); }
+                catch (Exception failure) { logger.log(Level.SEVERE, "Final environment flush failed; pending records could not be saved", failure); }
                 finally {
                     try { database.close(); }
                     catch (Exception failure) { logger.log(Level.SEVERE, "Database close failed", failure); }

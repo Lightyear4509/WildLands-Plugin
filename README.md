@@ -1,6 +1,6 @@
 # GGWP Wildlands
 
-Server-authoritative rainforest survival project. **Milestones 1 and 2 are accepted.** Hydration adds drinking, water quality, campfire boiling and an optional action-bar HUD. Later milestones are not implemented.
+Server-authoritative rainforest survival project. **Milestones 1–3 are implemented.** Hydration adds drinking, water quality, campfire boiling and an optional action-bar HUD. Environment adds temperature, wetness, shade, campfire warmth and shelter status. Further live checks are deferred to the combined build at the user's request; actual test status is recorded in CROSSPLAY-COMPATIBILITY.md.
 
 ## Requirements and build
 
@@ -20,7 +20,7 @@ Linux/macOS:
 sh ./gradlew clean build
 ```
 
-Install **`build/libs/GGWPWildlands-0.2.0.jar`**. The `-plain.jar` is a development artifact without SQLite; do not install it. Tests run during `build`; HTML results are in `build/reports/tests/test/index.html`.
+Install **`build/libs/GGWPWildlands-0.3.0.jar`**. The `-plain.jar` is a development artifact without SQLite; do not install it. Tests run during `build`; HTML results are in `build/reports/tests/test/index.html`.
 
 The build targets Java 25 bytecode and pins Paper API `26.2.build.121-stable`. SQLite is bundled in the distributable, including its native libraries and JDBC service descriptor. No runtime dependency download is required by Wildlands. The Gradle wrapper distribution is SHA-256 pinned, and dependency versions are locked in gradle.lockfile. SQLite uses Paper's provided SLF4J API rather than bundling a second logging API. Java 25 may warn about SQLite native-library access unless the server is launched with --enable-native-access=ALL-UNNAMED.
 
@@ -29,7 +29,7 @@ The build targets Java 25 bytecode and pins Paper API `26.2.build.121-stable`. S
 1. Install Java 25 and a Paper **26.2** server.
 2. Stop the server and copy the distributable into `plugins/`.
 3. Start the server. Look for **Foundation ready** in the log.
-4. Configure `plugins/GGWPWildlands/config.yml` `messages.yml`, and `hydration.yml`.
+4. Configure `plugins/GGWPWildlands/config.yml`, `messages.yml`, `hydration.yml`, and `environment.yml`.
 5. Run `wildlands admin debug` from the server console.
 
 Geyser-Spigot and Floodgate are optional. Install/configure their official server plugins to support Bedrock connections. Wildlands requires no client mod or resource pack. Do not install the plain and shaded JARs together. Use a full server restart for plugin updates; Bukkit/server hot reload is unsupported.
@@ -66,6 +66,9 @@ modules:
   player-records: true
   hydration: true
   hud: true
+  temperature: true
+  wetness: true
+  shelter: true
 debug:
   enabled: true
 ```
@@ -89,7 +92,7 @@ The plugin registers commands immediately in a STARTING state, initializes files
 
 A single dedicated storage worker owns JDBC access. Server-thread listeners capture immutable UUID/name/time records, then enqueue database work. No Bukkit player or world access occurs on that worker. Online records are saved in batched transactions; joins and quits also queue saves. Failed batches remain in memory for retry on the next save. Failed player loads retry on that cadence without requiring reconnect; diagnostics distinguish LOADING from LOAD_FAILED. Shutdown queues a final flush and waits up to 20 seconds for the worker; errors or timeout are logged prominently. As with any buffered persistence system, a process crash can lose records not yet committed.
 
-SQLite uses prepared statements, WAL, a 5-second busy timeout, FULL synchronization, and schema versioning via `PRAGMA user_version`. Schema version 2 retains `players(uuid PRIMARY KEY, last_known_name, first_seen, last_seen)` and adds `hydration_players(uuid PRIMARY KEY, hydration, hud_enabled, dry_seconds)`. The version-1 migration is transactional. Player timestamps are UTC epoch milliseconds. UPSERT preserves the earliest first-seen time and latest last-seen/name, preventing stale reconnect writes from regressing records. A newer schema is refused rather than downgraded.
+SQLite uses prepared statements, WAL, a 5-second busy timeout, FULL synchronization, and schema versioning via `PRAGMA user_version`. Schema version 3 retains player and hydration records and adds `environment_players(uuid PRIMARY KEY, temperature, wetness)`. The migrations are transactional. Player timestamps are UTC epoch milliseconds. UPSERT preserves the earliest first-seen time and latest last-seen/name, preventing stale reconnect writes from regressing records. A newer schema is refused rather than downgraded.
 
 Use a normal server shutdown before copying the database for backup. If copying a live database, use an SQLite-aware backup tool; copying only the `.db` file can omit committed WAL data. Never delete or replace the database to recover from a configuration error.
 
@@ -111,6 +114,12 @@ Place a water bottle on a lit campfire to boil it (20 seconds by default), then 
 
 Normal hydration loss is 0.025 per second, sampled every five seconds; activity increases use. Offline, dead, creative and spectator players do not deplete. Below 25%, natural food-based healing is reduced. Only prolonged severe dehydration causes direct damage. Unsafe water carries configurable hunger-effect risk, rather than guaranteed illness. Respawn restores 70 hydration. Values, risks, timings and spring coordinates are in `hydration.yml`. Spring entries use `{world: world, x: 10, y: 70, z: 20}` and apply only at the exact source block; custom terrain generation is a later milestone.
 
-Boiling-duration and storage-setting changes require a restart. Other validated hydration settings reload with `/wildlands reload`. Disabling hydration saves loaded sessions and removes collection/drinking/boiling listeners and the recipe. Cauldron provenance tracking remains active to invalidate stale metadata while gameplay is disabled; it performs no scans. Disabling HUD stops its action-bar task. A player's HUD preference is stored with hydration and takes effect when both modules are enabled.
+Boiling-duration and storage-setting changes require a restart. Other validated hydration settings reload with `/wildlands reload`. Disabling hydration stops its gameplay effects and removes collection/drinking/boiling listeners and the recipe. Cauldron provenance tracking remains active to invalidate stale metadata while gameplay is disabled; it performs no scans. Disabling HUD stops its action-bar task. HUD preferences use the existing hydration record, which remains loaded and periodically saved while either hydration or HUD needs it. With hydration disabled, the HUD can still display enabled environment fields and `/wildlands hud on|off` still works. Disabling both consumers saves and releases those records.
 
 Hydration does not overwrite persisted state before loading succeeds. Failed loads retry, failed writes remain pending, and reconnects can recover the latest pending snapshot. The database worker never reads Bukkit world state. Item and cauldron quality use item/chunk persistent data saved by Minecraft; external world-editing tools must clear stale cauldron tags when replacing blocks outside normal Bukkit events.
+
+## Environment (Milestone 3)
+
+Temperature and wetness are sampled every five seconds on the server thread and saved in the same batched SQLite worker as the other player data. Temperature uses the current biome, elevation above sea level, time of day, sprinting, local rain, water exposure, shade and nearby lit campfires. The Overworld day/night adjustment defaults to ±3 degrees; sprinting adds 2 degrees. Both are configurable. Hot conditions increase hydration loss. Cold and wet conditions reduce natural food-based healing to 75% by default, while potion healing stays unchanged. Wetness rises in local rain and water, then dries gradually and faster under a roof or near warmth.
+
+Shelter is evaluated only around the player: a short upward roof check, four bounded wall checks, dry ground and a limited-radius lit-campfire search. It does not prescribe a building shape, force-load chunks or scan the world. `/wildlands status` shows temperature, wetness and shelter state. `/wildlands admin temperature <online-player>` lets operators inspect an online player's environment state. Tune all values in `environment.yml`; changing its sampling interval requires a restart, while other valid values reload normally. The HUD appends temperature and wetness when their modules are enabled. Both clients require no resource pack or mod.

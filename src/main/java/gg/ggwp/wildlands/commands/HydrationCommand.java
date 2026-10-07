@@ -23,6 +23,9 @@ public final class HydrationCommand implements CommandExecutor, TabCompleter {
     public void status(CommandSender sender) {
         if (!ready(sender, "ggwpwildlands.use")) return;
         if (!(sender instanceof Player player)) { say(sender, "Use this command in-game."); return; }
+        if (plugin.modules().states().get("hydration") != gg.ggwp.wildlands.core.ModuleManager.State.ENABLED) {
+            say(sender, "Hydration: disabled"); return;
+        }
         var record = plugin.hydration().record(player.getUniqueId());
         if (record.isEmpty()) { say(sender, "Hydration: " + plugin.hydration().state(player.getUniqueId())); return; }
         say(sender, "Hydration: " + String.format(Locale.ROOT, "%.1f", record.get().hydration())
@@ -36,7 +39,7 @@ public final class HydrationCommand implements CommandExecutor, TabCompleter {
         }
         boolean enabled = args[1].equalsIgnoreCase("on");
         if (!plugin.hydration().hud(player.getUniqueId(), enabled)) {
-            say(sender, "Hydration is disabled or your data has not loaded yet."); return;
+            say(sender, "HUD data is unavailable; enable the hud module and wait for your data to load."); return;
         }
         if (!enabled) player.sendActionBar(net.kyori.adventure.text.Component.empty());
         say(sender, "HUD preference saved: " + (enabled ? "on" : "off") + ". The hud module must also be enabled.");

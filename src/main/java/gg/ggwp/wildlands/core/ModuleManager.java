@@ -14,11 +14,18 @@ public final class ModuleManager implements AutoCloseable {
     }
 
     public void apply(Map<String, Boolean> desired) throws Exception {
+        apply(desired, () -> {});
+    }
+
+    /** Restore lifecycle configuration before restarting modules during rollback. */
+    public void apply(Map<String, Boolean> desired, Runnable beforeRollback) throws Exception {
         if (!modules.keySet().equals(desired.keySet())) throw new IllegalArgumentException("Module configuration mismatch");
         var previous = new LinkedHashMap<>(states);
         try {
             for (String id : modules.keySet()) transition(id, desired.get(id));
         } catch (Exception failure) {
+            try { beforeRollback.run(); }
+            catch (Exception rollback) { failure.addSuppressed(rollback); }
             var ids = new ArrayList<>(modules.keySet());
             Collections.reverse(ids);
             for (String id : ids) {

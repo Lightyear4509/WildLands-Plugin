@@ -61,3 +61,16 @@ Java and Bedrock hydration acceptance used Paper 26.2 build 121, Java client 26.
 | Module toggles and admin setter | Server permissions | Same permission model | Console module toggles and Java admin setter passed; user-confirmed client permission denial on both editions |
 
 No client-side mods or resource packs are required. Untested compatibility remains limited to nonstandard inventory edge cases and third-party world editors bypassing normal Bukkit cauldron events; these are documented operational limits, not missing Milestone 2 gameplay.
+
+## Milestone 3 — implemented; remaining live checks deferred
+
+| Feature | Java | Bedrock through Geyser/Floodgate | Tested |
+| --- | --- | --- | --- |
+| Temperature and wetness HUD | Plain action-bar text | Same translated action-bar text | Both editions confirmed normal display, environment-only HUD and off/on commands with hydration disabled |
+| Shelter status and shade | Server-local block checks | Same server calculation | Automated shelter detection passes; Bedrock user-confirmed Sheltered status; isolated shade and Java shelter checks pending |
+| Rain wetness and shelter drying | Server-authoritative exposure and drying | Same server calculation | Java and Bedrock user-confirmed wetness rising outside and falling inside shelter |
+| Water immersion | Server-authoritative water exposure | Same server calculation | Java and Bedrock user-confirmed rising wetness; both console samples reached 100% |
+| Campfire warmth | Vanilla lit campfire detection | Same vanilla block state | Automated rules pass; both editions confirmed warmth label and drying; controlled fire changes raised displayed temperature by 8°C on each |
+| Environment persistence | UUID-keyed SQLite snapshot | Floodgate UUID-keyed SQLite snapshot | Automated migration/repository tests pass; real Java and Bedrock records retained across restart, including Bedrock wetness 100%; exact initial reconnect value not isolated from sampling |
+
+No custom visuals, resource packs, or client-side mods are introduced by this candidate.

@@ -2,7 +2,7 @@ name: GGWPWildlands
 version: '${version}'
 main: gg.ggwp.wildlands.core.WildlandsPlugin
 api-version: '26.2'
-description: GGWP Wildlands foundation
+description: GGWP Wildlands survival environment
 softdepend: [Geyser-Spigot, floodgate]
 commands:
   wildlands:

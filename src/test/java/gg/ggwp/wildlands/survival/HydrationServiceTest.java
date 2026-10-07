@@ -24,15 +24,23 @@ class HydrationServiceTest {
         doAnswer(call -> { callbacks.add(call.getArgument(0)); return null; }).when(plugin).onMain(any());
         var storage = new StorageService(Logger.getAnonymousLogger());
         var hydration = new HydrationService(plugin, storage);
+        var server = mock(org.bukkit.Server.class);
+        var scheduler = mock(org.bukkit.scheduler.BukkitScheduler.class);
+        when(plugin.getServer()).thenReturn(server);
+        when(server.getPluginManager()).thenReturn(mock(org.bukkit.plugin.PluginManager.class));
+        when(server.getScheduler()).thenReturn(scheduler);
+        when(scheduler.runTaskTimer(eq(plugin), any(Runnable.class), anyLong(), anyLong()))
+                .thenAnswer(call -> mock(org.bukkit.scheduler.BukkitTask.class));
         var player = mock(Player.class);
         UUID id = UUID.randomUUID();
         when(player.getUniqueId()).thenReturn(id);
-        try {
+        try (var treatment = mockConstruction(WaterTreatment.class)) {
             storage.submit(() -> {
                 storage.open(directory.resolve("data.db"));
                 storage.saveHydration(List.of(new HydrationRecord(id, 17, true, 0)));
                 return null;
             }).get(5, TimeUnit.SECONDS);
+            hydration.enable();
             hydration.onJoin(new PlayerJoinEvent(player, (net.kyori.adventure.text.Component) null));
             storage.submit(() -> null).get(5, TimeUnit.SECONDS);
             assertFalse(hydration.set(id, 100), "Cannot overwrite unloaded saved state");
@@ -64,6 +72,17 @@ class HydrationServiceTest {
             storage.submit(() -> null).get(5, TimeUnit.SECONDS);
             callbacks.remove().run();
             assertEquals(new HydrationRecord(id, 65, false, 0), hydration.record(id).orElseThrow());
+            hydration.trackHud(true);
+            hydration.disable();
+            assertTrue(hydration.hud(id, true), "HUD preference remains writable with hydration disabled");
+            assertFalse(hydration.set(id, 0));
+            assertFalse(hydration.drink(player, WaterQuality.CLEAN));
+            var respawn = mock(PlayerRespawnEvent.class);
+            when(respawn.getPlayer()).thenReturn(player);
+            hydration.onRespawn(respawn);
+            assertEquals(65, hydration.record(id).orElseThrow().hydration());
+            hydration.trackHud(false);
+            assertTrue(hydration.record(id).isEmpty(), "Last consumer releases the session");
         } finally { storage.close(); }
     }
     private static void quit(HydrationService hydration, Player player) {

@@ -28,6 +28,7 @@ public final class HydrationService implements WildlandsModule, Listener {
     private BukkitTask sampling, saving;
     private WaterTreatment treatment;
     private WaterCollection collection;
+    private boolean gameplayEnabled, hudTracking;
     private CompletableFuture<Void> lastSave = CompletableFuture.completedFuture(null);
 
     public HydrationService(WildlandsPlugin plugin, StorageService storage) {
@@ -37,10 +38,21 @@ public final class HydrationService implements WildlandsModule, Listener {
     private HydrationSettings settings() { return plugin.configuration().hydration(); }
     @Override public String id() { return "hydration"; }
     @Override public void enable() {
+        gameplayEnabled = true;
         treatment = new WaterTreatment(plugin, this);
         treatment.enable();
         collection = new WaterCollection(plugin, plugin.cauldronWater());
         plugin.getServer().getPluginManager().registerEvents(collection, plugin);
+        startTracking();
+    }
+    /** HUD preferences share the existing record without enabling hydration mechanics. */
+    public void trackHud(boolean enabled) {
+        hudTracking = enabled;
+        if (enabled) startTracking();
+        else if (!gameplayEnabled) stopTracking();
+    }
+    private void startTracking() {
+        if (sampling != null) return;
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         for (Player player : plugin.getServer().getOnlinePlayers()) join(player);
         sampling = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 100, 100);
@@ -50,8 +62,12 @@ public final class HydrationService implements WildlandsModule, Listener {
         }, interval, interval);
     }
     @Override public void disable() {
+        gameplayEnabled = false;
         if (collection != null) { HandlerList.unregisterAll(collection); collection = null; }
         if (treatment != null) { treatment.disable(); treatment = null; }
+        if (!hudTracking) stopTracking();
+    }
+    private void stopTracking() {
         if (sampling != null) { sampling.cancel(); sampling = null; }
         if (saving != null) { saving.cancel(); saving = null; }
         HandlerList.unregisterAll(this);
@@ -88,10 +104,11 @@ public final class HydrationService implements WildlandsModule, Listener {
                 continue;
             }
             Player player = plugin.getServer().getPlayer(entry.getKey());
-            if (player == null || player.isDead() || !survival(player)) continue;
+            if (!gameplayEnabled || player == null || player.isDead() || !survival(player)) continue;
             // Game time, not wall time: server stalls and offline time never become catch-up damage.
             var step = HydrationRules.advance(session.record, settings(), 5, player.isSprinting(),
-                    player.isSwimming(), System.nanoTime() < session.combatUntil, 1);
+                    player.isSwimming(), System.nanoTime() < session.combatUntil, plugin.environment() == null ? 1
+                            : plugin.environment().hydrationMultiplier(entry.getKey()));
             session.record = step.state();
             if (step.damageDue() && settings().damage() > 0) player.damage(settings().damage());
         }
@@ -105,6 +122,7 @@ public final class HydrationService implements WildlandsModule, Listener {
         if (removed != null && removed.record != null) save(List.of(removed.record));
     }
     @EventHandler public void onRespawn(PlayerRespawnEvent event) {
+        if (!gameplayEnabled) return;
         Session session = sessions.get(event.getPlayer().getUniqueId());
         if (session == null) return;
         session.combatUntil = 0;
@@ -113,6 +131,7 @@ public final class HydrationService implements WildlandsModule, Listener {
     }
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onRecovery(EntityRegainHealthEvent event) {
+        if (!gameplayEnabled) return;
         if (!(event.getEntity() instanceof Player player) || !survival(player)
                 || event.getRegainReason() != EntityRegainHealthEvent.RegainReason.SATIATED) return;
         record(player.getUniqueId()).filter(record -> record.hydration() < settings().recoveryBelow())
@@ -120,6 +139,7 @@ public final class HydrationService implements WildlandsModule, Listener {
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCombat(EntityDamageByEntityEvent event) {
+        if (!gameplayEnabled) return;
         if (event.getFinalDamage() <= 0) return;
         if (event.getEntity() instanceof Player player) combat(player);
         Entity source = event.getDamager();
@@ -131,6 +151,7 @@ public final class HydrationService implements WildlandsModule, Listener {
         if (session != null) session.combatUntil = System.nanoTime() + settings().combatMemorySeconds() * 1_000_000_000L;
     }
     public boolean drink(Player player, WaterQuality quality) {
+        if (!gameplayEnabled) return false;
         Session session = sessions.get(player.getUniqueId());
         if (session == null || session.record == null) return false;
         session.record = HydrationRules.drink(session.record, quality, settings());
@@ -142,6 +163,7 @@ public final class HydrationService implements WildlandsModule, Listener {
         return true;
     }
     public boolean set(UUID id, double value) {
+        if (!gameplayEnabled) return false;
         Session session = sessions.get(id);
         if (session == null || session.record == null) return false;
         session.record = new HydrationRecord(id, value, session.record.hudEnabled(), 0);
@@ -160,6 +182,7 @@ public final class HydrationService implements WildlandsModule, Listener {
         return session == null ? Optional.empty() : Optional.ofNullable(session.record);
     }
     public String state(UUID id) {
+        if (!gameplayEnabled) return "DISABLED";
         Session session = sessions.get(id);
         return session == null ? "DISABLED_OR_OFFLINE" : session.record != null ? "LOADED" : session.loading ? "LOADING" : "LOAD_FAILED";
     }

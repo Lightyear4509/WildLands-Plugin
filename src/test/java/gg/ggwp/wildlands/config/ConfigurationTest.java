@@ -15,7 +15,9 @@ class ConfigurationTest {
         assertTrue(snapshot.settings().modules().get("player-records"));
         assertTrue(Files.exists(directory.resolve("messages.yml")));
         assertTrue(Files.exists(directory.resolve("hydration.yml")));
+        assertTrue(Files.exists(directory.resolve("environment.yml")));
         assertEquals(0.025, snapshot.hydration().lossPerSecond());
+        assertEquals(5, snapshot.environment().sampleSeconds());
     }
     @Test void rejectsMalformedYamlRatherThanOverwritingIt() throws Exception {
         Files.writeString(directory.resolve("config.yml"), "modules: [broken");

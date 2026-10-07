@@ -29,7 +29,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
             case "help" -> {
                 if (!permitted(sender, USE)) return true;
                 say(sender, "/wildlands status | hud on|off | help; /hydration");
-                if (sender.hasPermission(ADMIN)) say(sender, "/wildlands reload | admin modules | admin hydration <player> <0..100>");
+                if (sender.hasPermission(ADMIN)) say(sender, "/wildlands reload | admin modules | admin hydration <player> <0..100> | admin temperature <player>");
                 if (sender.hasPermission(DEBUG)) say(sender, "/wildlands admin debug [online-player|uuid]");
                 say(sender, "Collect and treat water to maintain hydration.");
             }
@@ -40,6 +40,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
                     say(sender, "UUID: " + player.getUniqueId() + "; platform: " + plugin.crossplay().platform(player.getUniqueId()));
                     say(sender, "Record: " + plugin.players().state(player.getUniqueId()));
                     if (plugin.hydration() != null) new HydrationCommand(plugin).status(sender);
+                    if (plugin.environment() != null) say(sender, plugin.environment().status(player));
                 }
             }
             case "hud" -> new HydrationCommand(plugin).hud(sender, args);
@@ -61,6 +62,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         }
         switch (args[1].toLowerCase(Locale.ROOT)) {
             case "hydration" -> new HydrationCommand(plugin).admin(sender, args);
+            case "temperature" -> environment(sender, args);
             case "modules" -> {
                 if (permitted(sender, ADMIN))
                     plugin.modules().states().forEach((id, state) -> say(sender, id + ": " + state));
@@ -119,15 +121,25 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 2 && args[0].equalsIgnoreCase("hud") && sender.hasPermission(USE)) {
             options.addAll(List.of("on", "off"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
-            if (sender.hasPermission(ADMIN)) options.addAll(List.of("modules", "hydration"));
+            if (sender.hasPermission(ADMIN)) options.addAll(List.of("modules", "hydration", "temperature"));
             if (sender.hasPermission(DEBUG)) options.add("debug");
         } else if (args.length == 3 && args[0].equalsIgnoreCase("admin")
                 && ((args[1].equalsIgnoreCase("debug") && sender.hasPermission(DEBUG))
-                || (args[1].equalsIgnoreCase("hydration") && sender.hasPermission(ADMIN)))) {
+                || ((args[1].equalsIgnoreCase("hydration") || args[1].equalsIgnoreCase("temperature")) && sender.hasPermission(ADMIN)))) {
             for (Player player : plugin.getServer().getOnlinePlayers())
                 if (!(sender instanceof Player viewer) || viewer.canSee(player)) options.add(player.getName());
         }
         String partial = args.length == 0 ? "" : args[args.length - 1].toLowerCase(Locale.ROOT);
         return options.stream().filter(option -> option.toLowerCase(Locale.ROOT).startsWith(partial)).sorted().toList();
+    }
+    private void environment(CommandSender sender, String[] args) {
+        if (!permitted(sender, ADMIN)) return;
+        if (args.length != 3) { say(sender, "Usage: /wildlands admin temperature <online-player>"); return; }
+        Player player = plugin.getServer().getPlayerExact(args[2]);
+        if (player == null || sender instanceof Player viewer && !viewer.canSee(player)) {
+            say(sender, "Use an exact visible online player name."); return;
+        }
+        if (plugin.environment() == null) { say(sender, "Environment module is unavailable."); return; }
+        say(sender, player.getName() + " — " + plugin.environment().status(player));
     }
 }

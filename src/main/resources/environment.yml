@@ -1,0 +1,28 @@
+schema-version: 1
+sampling:
+  seconds: 5
+temperature:
+  default: 26
+  daily-amplitude: 3
+  sprint-warmth: 2
+  sea-level: 63
+  elevation-cooling-per-block: 0.04
+  rain-cooling: 3
+  water-cooling: 4
+  shade-cooling: 2
+  campfire-warmth: 8
+  campfire-radius: 6
+  hot-at: 31
+  cold-at: 12
+  wet-cold-at: 8
+  cold-wet-recovery-multiplier: 0.75
+  hot-hydration-multiplier: 1.35
+wetness:
+  rain-per-second: 8
+  swim-per-second: 18
+  dry-per-second: 2
+  shelter-dry-multiplier: 2
+shelter:
+  roof-search-height: 12
+  enclosure-radius: 3
+  campfire-search-height: 2

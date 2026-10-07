@@ -21,7 +21,7 @@ public record Settings(String databaseFile, int saveIntervalSeconds, Map<String,
         require(section != null, "modules must be a mapping");
         var modules = new java.util.LinkedHashMap<String, Boolean>();
         for (String key : section.getKeys(false)) {
-            require(java.util.Set.of("player-records", "hydration", "hud").contains(key), "Unknown module: " + key + " (later milestones are not installed)");
+            require(java.util.Set.of("player-records", "hydration", "hud", "temperature", "wetness", "shelter").contains(key), "Unknown module: " + key + " (later milestones are not installed)");
             require(section.get(key) instanceof Boolean, "modules." + key + " must be true or false");
             modules.put(key, section.getBoolean(key));
         }
@@ -29,6 +29,9 @@ public record Settings(String databaseFile, int saveIntervalSeconds, Map<String,
         // Existing foundation installs explicitly opt into new gameplay modules.
         modules.putIfAbsent("hydration", false);
         modules.putIfAbsent("hud", false);
+        modules.putIfAbsent("temperature", false);
+        modules.putIfAbsent("wetness", false);
+        modules.putIfAbsent("shelter", false);
         return new Settings((String) file, (int) interval, modules, yaml.getBoolean("debug.enabled"));
     }
 

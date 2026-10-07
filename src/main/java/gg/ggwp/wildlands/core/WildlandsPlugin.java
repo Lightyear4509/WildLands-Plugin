@@ -20,6 +20,8 @@ public final class WildlandsPlugin extends JavaPlugin {
     private final ModuleManager modules = new ModuleManager();
     private PlayerManager players;
     private gg.ggwp.wildlands.survival.HydrationService hydration;
+    private gg.ggwp.wildlands.survival.ShelterService shelter;
+    private gg.ggwp.wildlands.survival.EnvironmentService environment;
     private CrossplayService crossplay;
     private boolean reloading;
     private final gg.ggwp.wildlands.survival.CauldronWater cauldronWater = new gg.ggwp.wildlands.survival.CauldronWater();
@@ -53,6 +55,11 @@ public final class WildlandsPlugin extends JavaPlugin {
                 hydration = new gg.ggwp.wildlands.survival.HydrationService(this, storage);
                 modules.register(hydration);
                 modules.register(new gg.ggwp.wildlands.ui.HudManager(this, hydration));
+                shelter = new gg.ggwp.wildlands.survival.ShelterService(this);
+                environment = new gg.ggwp.wildlands.survival.EnvironmentService(this, storage, shelter);
+                modules.register(environment.temperatureModule());
+                modules.register(environment.wetnessModule());
+                modules.register(shelter);
                 modules.apply(loaded.settings().modules());
                 state = State.READY;
                 getLogger().info("Foundation ready. Geyser: " + crossplay.geyserStatus()
@@ -76,8 +83,16 @@ public final class WildlandsPlugin extends JavaPlugin {
                     throw new IllegalArgumentException("Storage settings require a server restart; no settings changed");
                 if (candidate.hydration().boilingSeconds() != config.hydration().boilingSeconds())
                     throw new IllegalArgumentException("Boiling duration changes require a server restart; no settings changed");
-                modules.apply(candidate.settings().modules());
+                if (candidate.environment().sampleSeconds() != config.environment().sampleSeconds())
+                    throw new IllegalArgumentException("Environment sampling interval changes require a server restart; no settings changed");
+                var previous = config;
                 config = candidate;
+                try {
+                    modules.apply(candidate.settings().modules(), () -> config = previous);
+                } catch (Exception error) {
+                    config = previous;
+                    throw error;
+                }
                 crossplay.refresh();
                 reply.accept("Configuration reloaded.");
             } catch (Exception error) {
@@ -109,6 +124,8 @@ public final class WildlandsPlugin extends JavaPlugin {
     public ConfigurationManager.Snapshot configuration() { return config; }
     public ModuleManager modules() { return modules; }
     public gg.ggwp.wildlands.survival.HydrationService hydration() { return hydration; }
+    public gg.ggwp.wildlands.survival.EnvironmentService environment() { return environment; }
+    public gg.ggwp.wildlands.survival.ShelterService shelter() { return shelter; }
     public PlayerManager players() { return players; }
     public StorageService storage() { return storage; }
     public CrossplayService crossplay() { return crossplay; }
