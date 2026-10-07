@@ -10,5 +10,6 @@ modules:
   wetness: true
   shelter: true
   seasons: true
+  worldgen: true
 debug:
   enabled: true

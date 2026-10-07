@@ -52,7 +52,7 @@ class SeasonRepositoryTest {
             try (Connection connection = DriverManager.getConnection("jdbc:sqlite:" + file);
                  Statement statement = connection.createStatement()) {
                 try (ResultSet rows = statement.executeQuery("PRAGMA user_version")) {
-                    assertEquals(valid ? 4 : 3, rows.getInt(1));
+                    assertEquals(valid ? 5 : 3, rows.getInt(1));
                 }
                 try (ResultSet rows = statement.executeQuery("SELECT count(*) FROM sqlite_master WHERE name='season_state'")) {
                     assertEquals(valid ? 1 : 0, rows.getInt(1));

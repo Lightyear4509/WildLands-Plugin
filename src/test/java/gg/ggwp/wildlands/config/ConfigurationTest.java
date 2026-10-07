@@ -16,6 +16,9 @@ class ConfigurationTest {
         assertTrue(Files.exists(directory.resolve("messages.yml")));
         assertTrue(Files.exists(directory.resolve("hydration.yml")));
         assertTrue(Files.exists(directory.resolve("environment.yml")));
+        assertTrue(Files.exists(directory.resolve("worldgen.yml")));
+        assertEquals(63, snapshot.worldgen().seaLevel());
+        assertTrue(snapshot.settings().modules().get("worldgen"));
         assertEquals(0.025, snapshot.hydration().lossPerSecond());
         assertEquals(5, snapshot.environment().sampleSeconds());
     }

@@ -23,6 +23,8 @@ public final class WildlandsPlugin extends JavaPlugin {
     private gg.ggwp.wildlands.survival.ShelterService shelter;
     private gg.ggwp.wildlands.survival.EnvironmentService environment;
     private gg.ggwp.wildlands.seasons.SeasonManager seasons;
+    private gg.ggwp.wildlands.world.WorldManager worlds;
+    private java.util.List<gg.ggwp.wildlands.storage.WorldRecord> savedWorlds;
     private CrossplayService crossplay;
     private boolean reloading;
     private final gg.ggwp.wildlands.survival.CauldronWater cauldronWater = new gg.ggwp.wildlands.survival.CauldronWater();
@@ -33,6 +35,7 @@ public final class WildlandsPlugin extends JavaPlugin {
         configuration = new ConfigurationManager(getDataFolder().toPath());
         crossplay = new CrossplayService(this);
         crossplay.refresh();
+        var levelDirectory = getServer().getLevelDirectory();
         getServer().getPluginManager().registerEvents(crossplay, this);
         var handler = new WildlandsCommand(this);
         var command = Objects.requireNonNull(getCommand("wildlands"), "Missing wildlands command");
@@ -48,11 +51,19 @@ public final class WildlandsPlugin extends JavaPlugin {
         storage.submit(() -> {
             var loaded = configuration.load();
             storage.open(getDataFolder().toPath().resolve(loaded.settings().databaseFile()));
+            savedWorlds = storage.worlds();
+            for (var world : savedWorlds) if (world.uuid() != null) {
+                var metadata = gg.ggwp.wildlands.world.WorldPaths.dimension(levelDirectory, world.name()).resolve("data/paper/metadata.dat");
+                if (!java.nio.file.Files.isRegularFile(metadata))
+                    throw new java.io.IOException("Registered world metadata is missing: " + world.name() + "; restore its backup");
+            }
             return loaded;
         }).whenComplete((loaded, failure) -> onMain(() -> {
             if (failure != null) { failStartup(failure); return; }
             try {
                 config = loaded;
+                worlds = new gg.ggwp.wildlands.world.WorldManager(this, storage, savedWorlds);
+                modules.register(worlds);
                 getServer().getPluginManager().registerEvents(cauldronWater, this);
                 players = new PlayerManager(this, storage, loaded.settings().saveIntervalSeconds());
                 modules.register(players);
@@ -67,6 +78,7 @@ public final class WildlandsPlugin extends JavaPlugin {
                 modules.register(environment.wetnessModule());
                 modules.register(shelter);
                 modules.apply(loaded.settings().modules());
+                worlds.restore();
                 state = State.READY;
                 getLogger().info("Foundation ready. Geyser: " + crossplay.geyserStatus()
                         + "; Floodgate: " + crossplay.floodgateStatus());
@@ -134,6 +146,7 @@ public final class WildlandsPlugin extends JavaPlugin {
     public gg.ggwp.wildlands.survival.HydrationService hydration() { return hydration; }
     public gg.ggwp.wildlands.survival.EnvironmentService environment() { return environment; }
     public gg.ggwp.wildlands.seasons.SeasonManager seasons() { return seasons; }
+    public gg.ggwp.wildlands.world.WorldManager worlds() { return worlds; }
     public gg.ggwp.wildlands.survival.ShelterService shelter() { return shelter; }
     public PlayerManager players() { return players; }
     public StorageService storage() { return storage; }

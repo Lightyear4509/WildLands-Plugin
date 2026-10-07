@@ -19,13 +19,14 @@ public final class Database implements AutoCloseable {
             try (ResultSet result = statement.executeQuery("PRAGMA user_version")) {
                 version = result.getInt(1);
             }
-            if (version > 4 || version < 0)
+            if (version > 5 || version < 0)
                 throw new SQLException("Unsupported database schema " + version + "; refusing migration");
             if (version > 0) verifyPlayers(statement);
             if (version >= 2) verifyHydration(statement);
             if (version >= 3) verifyEnvironment(statement);
             if (version >= 4) verifySeasons(statement);
-            if (version < 4) {
+            if (version >= 5) verifyWorlds(statement);
+            if (version < 5) {
                 connection.setAutoCommit(false);
                 try {
                     if (version == 0) statement.execute("""
@@ -51,14 +52,26 @@ public final class Database implements AutoCloseable {
                           wetness REAL NOT NULL CHECK(wetness >= 0 AND wetness <= 100)
                         )
                         """);
-                    statement.execute("""
+                    if (version < 4) statement.execute("""
                         CREATE TABLE season_state (
                           world_uuid TEXT PRIMARY KEY NOT NULL,
                           season TEXT NOT NULL CHECK(season IN ('DRY','TRANSITION_TO_WET','WET','MONSOON','TRANSITION_TO_DRY')),
                           elapsed_ticks INTEGER NOT NULL CHECK(elapsed_ticks >= 0)
                         )
                         """);
-                    statement.execute("PRAGMA user_version=4");
+                    statement.execute("""
+                        CREATE TABLE wildlands_worlds (
+                          name TEXT PRIMARY KEY COLLATE NOCASE NOT NULL,
+                          uuid TEXT UNIQUE,
+                          seed INTEGER NOT NULL,
+                          generator_version INTEGER NOT NULL CHECK(generator_version=1),
+                          sea_level INTEGER NOT NULL CHECK(sea_level BETWEEN 32 AND 128),
+                          tree_density REAL NOT NULL CHECK(tree_density BETWEEN 0 AND 1),
+                          caves INTEGER NOT NULL CHECK(caves IN (0,1)),
+                          ores INTEGER NOT NULL CHECK(ores IN (0,1))
+                        )
+                        """);
+                    statement.execute("PRAGMA user_version=5");
                     connection.commit();
                 } catch (SQLException failure) {
                     connection.rollback();
@@ -98,6 +111,9 @@ public final class Database implements AutoCloseable {
 
     private static void verifySeasons(Statement statement) throws SQLException {
         try (ResultSet ignored = statement.executeQuery("SELECT world_uuid,season,elapsed_ticks FROM season_state LIMIT 0")) {}
+    }
+    private static void verifyWorlds(Statement statement) throws SQLException {
+        try (ResultSet ignored = statement.executeQuery("SELECT name,uuid,seed,generator_version,sea_level,tree_density,caves,ores FROM wildlands_worlds LIMIT 0")) {}
     }
 
     Connection connection() {

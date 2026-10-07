@@ -88,3 +88,14 @@ Season profiles and world-UUID persistence have no client assets. Java/Bedrock p
 | Season commands and HUD | Chat and action bar | Same server messages | Automated command permissions and lifecycle tests pass; live UI checks deferred |
 
 At final acceptance, run `/season info` on both clients, inspect the season HUD, set each season from console, observe weather/temperature changes, compare natural crop growth and bonemeal, then verify restart persistence and disabling seasons. Neither client needs a mod or resource pack.
+
+## Milestone 5 — implemented; live checks deferred
+
+| Feature | Java | Bedrock through Geyser/Floodgate | Tested |
+| --- | --- | --- | --- |
+| Rainforest regions, rivers, wetlands and highlands | Custom server terrain with vanilla blocks/biomes | Same authoritative terrain, translated vanilla visuals | Automated deterministic model and chunk-buffer tests; real Paper creation, river biome/water, waterfall water, highland/cliff ground and bedrock/grass checks pass; live navigation deferred |
+| Canopy, bamboo, enormous trees and rocky landmarks | Vanilla jungle logs/leaves, bamboo, ferns and mossy blocks | Vanilla block equivalents | Automated chunk generation and clipping tests; live visual/playability review deferred |
+| Caves and ores | Server cave tunnels and normal mineable ore blocks | Same tunnels and resources | Automated terrain/cave model and generation tests; live mining deferred |
+| World creation, region status and restart profiles | Permission-gated server command and frozen SQLite profiles | Same commands, UUID and shared world | Automated permissions, profile persistence and failed-write recovery tests; real creation, safe-name/existing-world refusal, restart UUID preservation and restoration with creation disabled pass; live region chat deferred |
+
+Parity is assumed by design per the user's revised workflow. Final acceptance must visit representative regions, cross chunk boundaries, mine caves/ores, inspect crowns/bamboo and waterfalls, and compare region status on both clients. Resource packs and client mods are not required. Vanilla structures are not generated in custom worlds; ruins and discovery mechanics arrive in Milestone 8.

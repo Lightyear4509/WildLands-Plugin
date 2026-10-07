@@ -1,6 +1,6 @@
 # GGWP Wildlands
 
-Server-authoritative rainforest survival project. **Milestones 1–4 are implemented.** Hydration adds drinking, water quality, campfire boiling and an optional action-bar HUD. Environment adds temperature, wetness, shade, campfire warmth and shelter status. Seasons add per-world clocks, weather, temperature and natural crop-growth modifiers. Further live checks are deferred to the combined build at the user's request; actual test status is recorded in CROSSPLAY-COMPATIBILITY.md.
+Server-authoritative rainforest survival project. **Milestones 1–5 are implemented.** Hydration adds drinking, water quality, campfire boiling and an optional action-bar HUD. Environment adds temperature, wetness, shade, campfire warmth and shelter status. Seasons add per-world clocks, weather, temperature and natural crop-growth modifiers. World generation adds deterministic rainforest regions, waterways, canopy, caves and mining resources. Further live checks are deferred to the combined build at the user's request; actual test status is recorded in CROSSPLAY-COMPATIBILITY.md.
 
 ## Requirements and build
 
@@ -20,7 +20,7 @@ Linux/macOS:
 sh ./gradlew clean build
 ```
 
-Install **`build/libs/GGWPWildlands-0.4.0.jar`**. The `-plain.jar` is a development artifact without SQLite; do not install it. Tests run during `build`; HTML results are in `build/reports/tests/test/index.html`.
+Install **`build/libs/GGWPWildlands-0.5.0.jar`**. The `-plain.jar` is a development artifact without SQLite; do not install it. Tests run during `build`; HTML results are in `build/reports/tests/test/index.html`. Milestones 6–9 remain; this is an intermediate build, not the final combined release.
 
 The build targets Java 25 bytecode and pins Paper API `26.2.build.121-stable`. SQLite is bundled in the distributable, including its native libraries and JDBC service descriptor. No runtime dependency download is required by Wildlands. The Gradle wrapper distribution is SHA-256 pinned, and dependency versions are locked in gradle.lockfile. SQLite uses Paper's provided SLF4J API rather than bundling a second logging API. Java 25 may warn about SQLite native-library access unless the server is launched with --enable-native-access=ALL-UNNAMED.
 
@@ -29,7 +29,7 @@ The build targets Java 25 bytecode and pins Paper API `26.2.build.121-stable`. S
 1. Install Java 25 and a Paper **26.2** server.
 2. Stop the server and copy the distributable into `plugins/`.
 3. Start the server. Look for **Foundation ready** in the log.
-4. Configure `plugins/GGWPWildlands/config.yml`, `messages.yml`, `hydration.yml`, `environment.yml`, and `seasons.yml`.
+4. Configure `plugins/GGWPWildlands/config.yml`, `messages.yml`, `hydration.yml`, `environment.yml`, `seasons.yml`, and `worldgen.yml`.
 5. Run `wildlands admin debug` from the server console.
 
 Geyser-Spigot and Floodgate are optional. Install/configure their official server plugins to support Bedrock connections. Wildlands requires no client mod or resource pack. Do not install the plain and shaded JARs together. Use a full server restart for plugin updates; Bukkit/server hot reload is unsupported.
@@ -70,6 +70,7 @@ modules:
   wetness: true
   shelter: true
   seasons: true
+  worldgen: true
 debug:
   enabled: true
 ```
@@ -93,7 +94,7 @@ The plugin registers commands immediately in a STARTING state, initializes files
 
 A single dedicated storage worker owns JDBC access. Server-thread listeners capture immutable UUID/name/time records, then enqueue database work. No Bukkit player or world access occurs on that worker. Online records are saved in batched transactions; joins and quits also queue saves. Failed batches remain in memory for retry on the next save. Failed player loads retry on that cadence without requiring reconnect; diagnostics distinguish LOADING from LOAD_FAILED. Shutdown queues a final flush and waits up to 20 seconds for the worker; errors or timeout are logged prominently. As with any buffered persistence system, a process crash can lose records not yet committed.
 
-SQLite uses prepared statements, WAL, a 5-second busy timeout, FULL synchronization, and schema versioning via `PRAGMA user_version`. Schema version 4 retains player, hydration and environment records and adds `season_state(world_uuid PRIMARY KEY, season, elapsed_ticks)`. The migrations are transactional. Player timestamps are UTC epoch milliseconds. UPSERT preserves the earliest first-seen time and latest last-seen/name, preventing stale reconnect writes from regressing records. A newer schema is refused rather than downgraded.
+SQLite uses prepared statements, WAL, a 5-second busy timeout, FULL synchronization, and schema versioning via `PRAGMA user_version`. Schema version 5 retains player, hydration, environment and seasonal records and adds registered rainforest world identities and frozen generator profiles. The migrations are transactional. Player timestamps are UTC epoch milliseconds. UPSERT preserves the earliest first-seen time and latest last-seen/name, preventing stale reconnect writes from regressing records. A newer schema is refused rather than downgraded.
 
 Use a normal server shutdown before copying the database for backup. If copying a live database, use an SQLite-aware backup tool; copying only the `.db` file can omit committed WAL data. Never delete or replace the database to recover from a configuration error.
 
@@ -133,4 +134,14 @@ Fresh installs enable seasons; existing configs without the flag default it to f
 
 `/season` inspects your world; console may omit the world only when one configured Overworld is loaded. `/wildlands admin season monsoon world` resets that world's season counter and evaluates its weather immediately. The HUD and status display the current season. Failed loads retry without overwriting saved state; failed writes remain pending. Valid profile changes reload; changing `clock-seconds` requires restart. Weather changes apply at the next evaluation, and temperature changes at the next environment sample.
 
-This development version upgrades SQLite to schema 4. Back up the stopped server before installing it; Milestone 1–3 binaries cannot open the upgraded database. This interim build is not the requested final combined release. Further live crossplay checks are deferred to that release.
+This development version upgrades SQLite to schema 5. Back up the stopped server before installing it; Milestone 1–4 binaries cannot open the upgraded database. This interim build is not the requested final combined release. Further live crossplay checks are deferred to that release.
+
+## Rainforest world generation (Milestone 5)
+
+New installations enable the `worldgen` module; existing configs must explicitly opt in. No existing world is converted, and no new world is created automatically on a fresh install. From console or an administrator account, use `/wildlands admin world create wildlands 4509` to create a separate rainforest world, and `/wildlands admin world list` to inspect registrations. Names must be safe lowercase directory names, up to 48 characters; seeds are signed 64-bit integers. Existing world directories are refused. Up to 16 worlds may be registered. Teleportation uses the server's normal administrator/world management tools.
+
+World profiles are frozen in SQLite before creation. Registered worlds reload automatically with their original seed and generator after restart, including when `worldgen` is disabled. Disabling that module stops new creation; attached worlds retain their generator to protect existing terrain. Paper 26.2 stores these dimensions under the shared level's `dimensions/minecraft/<name>/` directory. Back up the plugin database and the entire shared level together. Missing registered world metadata fails plugin startup; loaded UUID/seed mismatches are refused. Do not configure another generator or a world-management plugin to load the same world first.
+
+`worldgen.yml` controls the sea level, tree density, caves and ores for future worlds. Valid changes reload without altering existing worlds. Generator version 1 uses continuous seeded terrain with river contours, stepped waterfall valleys, floodplains, wetlands, highlands, rocky escarpments, dense rainforest, bamboo and clearings. Cave tunnels include occasional rocky entrances. Ore clusters preserve mining progression. Broad crowns at varied heights, rare enormous trees, ferns and mossy boulders provide recognizable terrain using vanilla blocks. Generated canopy leaves persist to preserve broad crowns. No custom assets or client mods are required. Ruins and discoveries belong to Milestone 8.
+
+Generation writes only the requested chunk buffer and clips neighboring tree/rock shapes at the boundary; candidates are derived from absolute coordinates, independent of chunk generation order. Vanilla terrain, decorations and structures are disabled in these custom worlds; vanilla mob generation remains enabled. `/wildlands status` shows the modeled region. Add the new world name to `seasons.yml` if it should participate in seasonal weather.

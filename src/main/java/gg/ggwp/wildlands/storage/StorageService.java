@@ -19,10 +19,12 @@ public final class StorageService {
     private final HydrationRepository hydrationRepository = new HydrationRepository(database);
     private final EnvironmentRepository environmentRepository = new EnvironmentRepository(database);
     private final SeasonRepository seasonRepository = new SeasonRepository(database);
+    private final WorldRepository worldRepository = new WorldRepository(database);
+    private final Map<String, WorldRecord> pendingWorldIdentities = new LinkedHashMap<>();
     private final Map<UUID, SeasonRecord> pendingSeasons = new LinkedHashMap<>();
     private final Map<UUID, EnvironmentRecord> pendingEnvironment = new LinkedHashMap<>();
     private final Map<UUID, HydrationRecord> pendingHydration = new LinkedHashMap<>();
-    private boolean playerWriteFailed, hydrationWriteFailed, environmentWriteFailed, seasonWriteFailed;
+    private boolean playerWriteFailed, hydrationWriteFailed, environmentWriteFailed, seasonWriteFailed, worldWriteFailed;
     private final Map<UUID, PlayerRecord> pending = new LinkedHashMap<>();
     private final AtomicInteger queue = new AtomicInteger();
     private final Logger logger;
@@ -91,8 +93,8 @@ public final class StorageService {
     }
 
     private void refreshDiagnostics() {
-        pendingCount = pending.size() + pendingHydration.size() + pendingEnvironment.size() + pendingSeasons.size();
-        health = playerWriteFailed || hydrationWriteFailed || environmentWriteFailed || seasonWriteFailed ? "WRITE_FAILED" : "OK";
+        pendingCount = pending.size() + pendingHydration.size() + pendingEnvironment.size() + pendingSeasons.size() + pendingWorldIdentities.size();
+        health = playerWriteFailed || hydrationWriteFailed || environmentWriteFailed || seasonWriteFailed || worldWriteFailed ? "WRITE_FAILED" : "OK";
     }
 
     public Optional<SeasonRecord> findSeason(UUID worldUuid) throws Exception {
@@ -111,6 +113,19 @@ public final class StorageService {
     }
 
     public String health() { return health; }
+    public List<WorldRecord> worlds() throws Exception { return worldRepository.all(); }
+    public void reserveWorld(WorldRecord record) throws Exception { worldRepository.reserve(record); }
+    public void identifyWorld(WorldRecord record) throws Exception {
+        pendingWorldIdentities.put(record.name(), record); flushWorldIdentities();
+    }
+    public void flushWorldIdentities() throws Exception {
+        refreshDiagnostics();
+        try {
+            worldRepository.identifyBatch(pendingWorldIdentities.values());
+            if (!pendingWorldIdentities.isEmpty()) lastSuccessfulSave = System.currentTimeMillis();
+            pendingWorldIdentities.clear(); worldWriteFailed = false; refreshDiagnostics();
+        } catch (Exception failure) { worldWriteFailed = true; refreshDiagnostics(); throw failure; }
+    }
     public int queueSize() { return queue.get(); }
     public int pendingCount() { return pendingCount; }
     public long lastSuccessfulSave() { return lastSuccessfulSave; }
@@ -129,6 +144,8 @@ public final class StorageService {
                 catch (Exception failure) { logger.log(Level.SEVERE, "Final environment flush failed; pending records could not be saved", failure); }
                 try { saveSeasons(List.of()); }
                 catch (Exception failure) { logger.log(Level.SEVERE, "Final season flush failed; pending records could not be saved", failure); }
+                try { flushWorldIdentities(); }
+                catch (Exception failure) { logger.log(Level.SEVERE, "Final world identity flush failed", failure); }
                 finally {
                     try { database.close(); }
                     catch (Exception failure) { logger.log(Level.SEVERE, "Database close failed", failure); }
