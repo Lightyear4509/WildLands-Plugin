@@ -28,9 +28,10 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         switch (action) {
             case "help" -> {
                 if (!permitted(sender, USE)) return true;
-                say(sender, "/wildlands status | hud on|off | help; /hydration");
+                say(sender, "/wildlands status | hud on|off | help; /hydration; /season info");
                 if (sender.hasPermission(ADMIN)) say(sender, "/wildlands reload | admin modules | admin hydration <player> <0..100> | admin temperature <player>");
                 if (sender.hasPermission(DEBUG)) say(sender, "/wildlands admin debug [online-player|uuid]");
+                if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin season <season> [world]");
                 say(sender, "Collect and treat water to maintain hydration.");
             }
             case "status" -> {
@@ -41,6 +42,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
                     say(sender, "Record: " + plugin.players().state(player.getUniqueId()));
                     if (plugin.hydration() != null) new HydrationCommand(plugin).status(sender);
                     if (plugin.environment() != null) say(sender, plugin.environment().status(player));
+                    if (plugin.seasons() != null) say(sender, plugin.seasons().status(player.getWorld()));
                 }
             }
             case "hud" -> new HydrationCommand(plugin).hud(sender, args);
@@ -61,6 +63,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
             return;
         }
         switch (args[1].toLowerCase(Locale.ROOT)) {
+            case "season" -> new SeasonCommand(plugin).admin(sender, args);
             case "hydration" -> new HydrationCommand(plugin).admin(sender, args);
             case "temperature" -> environment(sender, args);
             case "modules" -> {
@@ -121,7 +124,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 2 && args[0].equalsIgnoreCase("hud") && sender.hasPermission(USE)) {
             options.addAll(List.of("on", "off"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
-            if (sender.hasPermission(ADMIN)) options.addAll(List.of("modules", "hydration", "temperature"));
+            if (sender.hasPermission(ADMIN)) options.addAll(List.of("modules", "hydration", "temperature", "season"));
             if (sender.hasPermission(DEBUG)) options.add("debug");
         } else if (args.length == 3 && args[0].equalsIgnoreCase("admin")
                 && ((args[1].equalsIgnoreCase("debug") && sender.hasPermission(DEBUG))
@@ -129,6 +132,10 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
             for (Player player : plugin.getServer().getOnlinePlayers())
                 if (!(sender instanceof Player viewer) || viewer.canSee(player)) options.add(player.getName());
         }
+        if (args.length == 3 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("season") && sender.hasPermission(ADMIN))
+            for (var season : gg.ggwp.wildlands.seasons.Season.values()) options.add(season.name().toLowerCase(Locale.ROOT).replace('_', '-'));
+        if (args.length == 4 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("season") && sender.hasPermission(ADMIN))
+            plugin.getServer().getWorlds().forEach(world -> options.add(world.getName()));
         String partial = args.length == 0 ? "" : args[args.length - 1].toLowerCase(Locale.ROOT);
         return options.stream().filter(option -> option.toLowerCase(Locale.ROOT).startsWith(partial)).sorted().toList();
     }

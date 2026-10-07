@@ -1,6 +1,6 @@
 # GGWP Wildlands
 
-Server-authoritative rainforest survival project. **Milestones 1–3 are implemented.** Hydration adds drinking, water quality, campfire boiling and an optional action-bar HUD. Environment adds temperature, wetness, shade, campfire warmth and shelter status. Further live checks are deferred to the combined build at the user's request; actual test status is recorded in CROSSPLAY-COMPATIBILITY.md.
+Server-authoritative rainforest survival project. **Milestones 1–4 are implemented.** Hydration adds drinking, water quality, campfire boiling and an optional action-bar HUD. Environment adds temperature, wetness, shade, campfire warmth and shelter status. Seasons add per-world clocks, weather, temperature and natural crop-growth modifiers. Further live checks are deferred to the combined build at the user's request; actual test status is recorded in CROSSPLAY-COMPATIBILITY.md.
 
 ## Requirements and build
 
@@ -20,7 +20,7 @@ Linux/macOS:
 sh ./gradlew clean build
 ```
 
-Install **`build/libs/GGWPWildlands-0.3.0.jar`**. The `-plain.jar` is a development artifact without SQLite; do not install it. Tests run during `build`; HTML results are in `build/reports/tests/test/index.html`.
+Install **`build/libs/GGWPWildlands-0.4.0.jar`**. The `-plain.jar` is a development artifact without SQLite; do not install it. Tests run during `build`; HTML results are in `build/reports/tests/test/index.html`.
 
 The build targets Java 25 bytecode and pins Paper API `26.2.build.121-stable`. SQLite is bundled in the distributable, including its native libraries and JDBC service descriptor. No runtime dependency download is required by Wildlands. The Gradle wrapper distribution is SHA-256 pinned, and dependency versions are locked in gradle.lockfile. SQLite uses Paper's provided SLF4J API rather than bundling a second logging API. Java 25 may warn about SQLite native-library access unless the server is launched with --enable-native-access=ALL-UNNAMED.
 
@@ -29,7 +29,7 @@ The build targets Java 25 bytecode and pins Paper API `26.2.build.121-stable`. S
 1. Install Java 25 and a Paper **26.2** server.
 2. Stop the server and copy the distributable into `plugins/`.
 3. Start the server. Look for **Foundation ready** in the log.
-4. Configure `plugins/GGWPWildlands/config.yml`, `messages.yml`, `hydration.yml`, and `environment.yml`.
+4. Configure `plugins/GGWPWildlands/config.yml`, `messages.yml`, `hydration.yml`, `environment.yml`, and `seasons.yml`.
 5. Run `wildlands admin debug` from the server console.
 
 Geyser-Spigot and Floodgate are optional. Install/configure their official server plugins to support Bedrock connections. Wildlands requires no client mod or resource pack. Do not install the plain and shaded JARs together. Use a full server restart for plugin updates; Bukkit/server hot reload is unsupported.
@@ -51,7 +51,7 @@ The use permission defaults to everyone; both admin permissions default to opera
 
 Status shows an online player's server UUID, detected platform, and record loading state. Console status reports plugin readiness. Diagnostics show server/plugin/Java versions, storage health, queued work, pending writes, last successful save, module states, and crossplay provider availability. They do not expose Floodgate keys, XUIDs, tokens, or IP addresses.
 
-Use `/hydration` to inspect hydration, `/wildlands hud on|off` to save your HUD preference, and `/wildlands admin hydration <online-player|uuid> <0..100>` for permission-gated administration. The HUD/status commands use `ggwpwildlands.use`; the admin setter uses `ggwpwildlands.admin` and supports console. Seasons and landmarks are not registered.
+Use `/hydration` to inspect hydration, `/wildlands hud on|off` to save your HUD preference, and `/wildlands admin hydration <online-player|uuid> <0..100>` for permission-gated administration. The HUD/status commands use `ggwpwildlands.use`; the admin setter uses `ggwpwildlands.admin` and supports console. `/season [info [world]]` uses the use permission; `/wildlands admin season <season> [world]` uses the admin permission. Landmarks are not registered yet.
 
 ## Configuration and modules
 
@@ -69,6 +69,7 @@ modules:
   temperature: true
   wetness: true
   shelter: true
+  seasons: true
 debug:
   enabled: true
 ```
@@ -92,7 +93,7 @@ The plugin registers commands immediately in a STARTING state, initializes files
 
 A single dedicated storage worker owns JDBC access. Server-thread listeners capture immutable UUID/name/time records, then enqueue database work. No Bukkit player or world access occurs on that worker. Online records are saved in batched transactions; joins and quits also queue saves. Failed batches remain in memory for retry on the next save. Failed player loads retry on that cadence without requiring reconnect; diagnostics distinguish LOADING from LOAD_FAILED. Shutdown queues a final flush and waits up to 20 seconds for the worker; errors or timeout are logged prominently. As with any buffered persistence system, a process crash can lose records not yet committed.
 
-SQLite uses prepared statements, WAL, a 5-second busy timeout, FULL synchronization, and schema versioning via `PRAGMA user_version`. Schema version 3 retains player and hydration records and adds `environment_players(uuid PRIMARY KEY, temperature, wetness)`. The migrations are transactional. Player timestamps are UTC epoch milliseconds. UPSERT preserves the earliest first-seen time and latest last-seen/name, preventing stale reconnect writes from regressing records. A newer schema is refused rather than downgraded.
+SQLite uses prepared statements, WAL, a 5-second busy timeout, FULL synchronization, and schema versioning via `PRAGMA user_version`. Schema version 4 retains player, hydration and environment records and adds `season_state(world_uuid PRIMARY KEY, season, elapsed_ticks)`. The migrations are transactional. Player timestamps are UTC epoch milliseconds. UPSERT preserves the earliest first-seen time and latest last-seen/name, preventing stale reconnect writes from regressing records. A newer schema is refused rather than downgraded.
 
 Use a normal server shutdown before copying the database for backup. If copying a live database, use an SQLite-aware backup tool; copying only the `.db` file can omit committed WAL data. Never delete or replace the database to recover from a configuration error.
 
@@ -123,3 +124,13 @@ Hydration does not overwrite persisted state before loading succeeds. Failed loa
 Temperature and wetness are sampled every five seconds on the server thread and saved in the same batched SQLite worker as the other player data. Temperature uses the current biome, elevation above sea level, time of day, sprinting, local rain, water exposure, shade and nearby lit campfires. The Overworld day/night adjustment defaults to ±3 degrees; sprinting adds 2 degrees. Both are configurable. Hot conditions increase hydration loss. Cold and wet conditions reduce natural food-based healing to 75% by default, while potion healing stays unchanged. Wetness rises in local rain and water, then dries gradually and faster under a roof or near warmth.
 
 Shelter is evaluated only around the player: a short upward roof check, four bounded wall checks, dry ground and a limited-radius lit-campfire search. It does not prescribe a building shape, force-load chunks or scan the world. `/wildlands status` shows temperature, wetness and shelter state. `/wildlands admin temperature <online-player>` lets operators inspect an online player's environment state. Tune all values in `environment.yml`; changing its sampling interval requires a restart, while other valid values reload normally. The HUD appends temperature and wetness when their modules are enabled. Both clients require no resource pack or mod.
+
+## Seasons (Milestone 4)
+
+`seasons.yml` configures DRY → TRANSITION_TO_WET → WET → MONSOON → TRANSITION_TO_DRY. Durations use 24,000-tick game days, advanced only while a managed world is loaded and seasons are enabled. Sleep and `/time` do not skip seasons, and server downtime does not advance them. Only explicitly listed Overworld names are managed; Nether, End and other worlds retain vanilla behavior. State is saved by world UUID, so recreating a world starts a separate clock.
+
+Fresh installs enable seasons; existing configs without the flag default it to false. Add `seasons: true` under `modules` to opt in. Profiles specify rainfall probability, conditional thunder probability, temperature offset and natural crop-growth multiplier. Defaults evaluate weather every five minutes and the clock every ten seconds. Wet weather provides more opportunities for existing rainwater collection; seasonal weather never removes water blocks. Crop modifiers affect normal growth events, preserve maturity limits and leave bonemeal unchanged. Disabling seasons saves the clock and restores weather captured before seasonal control began. No world scans or forced chunk loads occur.
+
+`/season` inspects your world; console may omit the world only when one configured Overworld is loaded. `/wildlands admin season monsoon world` resets that world's season counter and evaluates its weather immediately. The HUD and status display the current season. Failed loads retry without overwriting saved state; failed writes remain pending. Valid profile changes reload; changing `clock-seconds` requires restart. Weather changes apply at the next evaluation, and temperature changes at the next environment sample.
+
+This development version upgrades SQLite to schema 4. Back up the stopped server before installing it; Milestone 1–3 binaries cannot open the upgraded database. This interim build is not the requested final combined release. Further live crossplay checks are deferred to that release.

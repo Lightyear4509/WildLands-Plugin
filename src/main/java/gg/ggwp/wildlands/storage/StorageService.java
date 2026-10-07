@@ -18,9 +18,11 @@ public final class StorageService {
     private final PlayerRepository repository = new PlayerRepository(database);
     private final HydrationRepository hydrationRepository = new HydrationRepository(database);
     private final EnvironmentRepository environmentRepository = new EnvironmentRepository(database);
+    private final SeasonRepository seasonRepository = new SeasonRepository(database);
+    private final Map<UUID, SeasonRecord> pendingSeasons = new LinkedHashMap<>();
     private final Map<UUID, EnvironmentRecord> pendingEnvironment = new LinkedHashMap<>();
     private final Map<UUID, HydrationRecord> pendingHydration = new LinkedHashMap<>();
-    private boolean playerWriteFailed, hydrationWriteFailed, environmentWriteFailed;
+    private boolean playerWriteFailed, hydrationWriteFailed, environmentWriteFailed, seasonWriteFailed;
     private final Map<UUID, PlayerRecord> pending = new LinkedHashMap<>();
     private final AtomicInteger queue = new AtomicInteger();
     private final Logger logger;
@@ -89,8 +91,23 @@ public final class StorageService {
     }
 
     private void refreshDiagnostics() {
-        pendingCount = pending.size() + pendingHydration.size() + pendingEnvironment.size();
-        health = playerWriteFailed || hydrationWriteFailed || environmentWriteFailed ? "WRITE_FAILED" : "OK";
+        pendingCount = pending.size() + pendingHydration.size() + pendingEnvironment.size() + pendingSeasons.size();
+        health = playerWriteFailed || hydrationWriteFailed || environmentWriteFailed || seasonWriteFailed ? "WRITE_FAILED" : "OK";
+    }
+
+    public Optional<SeasonRecord> findSeason(UUID worldUuid) throws Exception {
+        SeasonRecord pending = pendingSeasons.get(worldUuid);
+        return pending == null ? seasonRepository.find(worldUuid) : Optional.of(pending);
+    }
+
+    public void saveSeasons(Collection<SeasonRecord> records) throws Exception {
+        for (SeasonRecord record : records) pendingSeasons.put(record.worldUuid(), record);
+        refreshDiagnostics();
+        try {
+            seasonRepository.saveBatch(pendingSeasons.values());
+            if (!pendingSeasons.isEmpty()) lastSuccessfulSave = System.currentTimeMillis();
+            pendingSeasons.clear(); seasonWriteFailed = false; refreshDiagnostics();
+        } catch (Exception failure) { seasonWriteFailed = true; refreshDiagnostics(); throw failure; }
     }
 
     public String health() { return health; }
@@ -110,6 +127,8 @@ public final class StorageService {
                 catch (Exception failure) { logger.log(Level.SEVERE, "Final hydration flush failed; pending records could not be saved", failure); }
                 try { saveEnvironment(List.of()); }
                 catch (Exception failure) { logger.log(Level.SEVERE, "Final environment flush failed; pending records could not be saved", failure); }
+                try { saveSeasons(List.of()); }
+                catch (Exception failure) { logger.log(Level.SEVERE, "Final season flush failed; pending records could not be saved", failure); }
                 finally {
                     try { database.close(); }
                     catch (Exception failure) { logger.log(Level.SEVERE, "Database close failed", failure); }

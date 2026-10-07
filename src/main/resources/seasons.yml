@@ -1,0 +1,37 @@
+schema-version: 1
+# Only explicitly listed Overworlds are managed. Nether/End weather stays vanilla.
+worlds: [world]
+clock-seconds: 10
+# Probability of rain per evaluation, and conditional thunder probability during rain.
+weather-seconds: 300
+seasons:
+  dry:
+    days: 14
+    temperature-delta: 3
+    rain-chance: 0.10
+    thunder-chance: 0.02
+    crop-multiplier: 0.80
+  transition-to-wet:
+    days: 4
+    temperature-delta: 1
+    rain-chance: 0.35
+    thunder-chance: 0.10
+    crop-multiplier: 1.00
+  wet:
+    days: 14
+    temperature-delta: 0
+    rain-chance: 0.65
+    thunder-chance: 0.20
+    crop-multiplier: 1.20
+  monsoon:
+    days: 5
+    temperature-delta: -2
+    rain-chance: 0.90
+    thunder-chance: 0.60
+    crop-multiplier: 1.10
+  transition-to-dry:
+    days: 4
+    temperature-delta: 1
+    rain-chance: 0.40
+    thunder-chance: 0.10
+    crop-multiplier: 1.00

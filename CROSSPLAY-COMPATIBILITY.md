@@ -74,3 +74,17 @@ No client-side mods or resource packs are required. Untested compatibility remai
 | Environment persistence | UUID-keyed SQLite snapshot | Floodgate UUID-keyed SQLite snapshot | Automated migration/repository tests pass; real Java and Bedrock records retained across restart, including Bedrock wetness 100%; exact initial reconnect value not isolated from sampling |
 
 No custom visuals, resource packs, or client-side mods are introduced by this candidate.
+
+## Milestone 4 — implemented; live checks deferred
+
+Season profiles and world-UUID persistence have no client assets. Java/Bedrock parity is assumed by design at the user's request; final combined-build acceptance remains outstanding. No seasonal gameplay is marked live-tested.
+
+| Feature | Java | Bedrock through Geyser/Floodgate | Tested |
+| --- | --- | --- | --- |
+| Season clock and persistence | Per-world server clock | Same server clock | Automated boundary, wraparound, configuration, migration and restart repository tests pass |
+| Rain and thunderstorms | Vanilla server weather | Geyser translates vanilla weather | Automated probability and world-weather tests pass; live display deferred |
+| Temperature modifier | Server environment calculation | Same calculation | Automated profile/lifecycle tests pass; live HUD observation deferred |
+| Natural crop growth | Server growth events | Same crops and block ages | Automated growth/cancellation/maturity rules pass; live crop checks deferred |
+| Season commands and HUD | Chat and action bar | Same server messages | Automated command permissions and lifecycle tests pass; live UI checks deferred |
+
+At final acceptance, run `/season info` on both clients, inspect the season HUD, set each season from console, observe weather/temperature changes, compare natural crop growth and bonemeal, then verify restart persistence and disabling seasons. Neither client needs a mod or resource pack.

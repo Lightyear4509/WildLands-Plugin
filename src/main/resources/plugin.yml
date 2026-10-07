@@ -11,6 +11,9 @@ commands:
   hydration:
     description: Show hydration and HUD preference
     usage: /hydration
+  season:
+    description: Show the rainforest season for a world
+    usage: /season info [world]
 permissions:
   ggwpwildlands.use:
     default: true

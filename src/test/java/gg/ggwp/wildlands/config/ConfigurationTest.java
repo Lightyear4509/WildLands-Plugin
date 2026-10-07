@@ -29,7 +29,7 @@ class ConfigurationTest {
         for (Object[] change : new Object[][]{
                 {"storage.file", "../outside.db"}, {"storage.save-interval-seconds", 0},
                 {"storage.save-interval-seconds", "30"}, {"debug.enabled", "yes"},
-                {"modules.player-records", "true"}, {"modules.seasons", true}, {"schema-version", 2}}) {
+                {"modules.player-records", "true"}, {"modules.wildlife", true}, {"schema-version", 2}}) {
             var yaml = new YamlConfiguration();
             yaml.load(directory.resolve("config.yml").toFile());
             yaml.set((String) change[0], change[1]);

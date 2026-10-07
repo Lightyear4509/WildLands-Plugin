@@ -37,15 +37,14 @@ public final class HudManager implements WildlandsModule {
     private String hudText(Player player, gg.ggwp.wildlands.storage.HydrationRecord record) {
         var fields = new java.util.ArrayList<String>();
         if (hydrationEnabled()) fields.add("Hydration " + Math.round(record.hydration()) + "%");
-        String text = String.join(" | ", fields);
-        if (plugin.environment() == null) return text;
-        var environment = plugin.environment().record(player.getUniqueId());
-        if (environment.isEmpty()) return text;
-        var value = environment.get();
-        if (plugin.modules().states().get("temperature") == ModuleManager.State.ENABLED)
-            fields.add("Temp " + Math.round(value.temperature()) + "°C");
-        if (plugin.modules().states().get("wetness") == ModuleManager.State.ENABLED)
-            fields.add("Wet " + Math.round(value.wetness()) + "%");
+        if (plugin.environment() != null) plugin.environment().record(player.getUniqueId()).ifPresent(value -> {
+            if (plugin.modules().states().get("temperature") == ModuleManager.State.ENABLED)
+                fields.add("Temp " + Math.round(value.temperature()) + "°C");
+            if (plugin.modules().states().get("wetness") == ModuleManager.State.ENABLED)
+                fields.add("Wet " + Math.round(value.wetness()) + "%");
+        });
+        if (plugin.seasons() != null) plugin.seasons().state(player.getWorld())
+                .ifPresent(state -> fields.add("Season " + state.season().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ')));
         return String.join(" | ", fields);
     }
 }

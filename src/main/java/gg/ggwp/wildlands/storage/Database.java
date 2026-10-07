@@ -19,11 +19,13 @@ public final class Database implements AutoCloseable {
             try (ResultSet result = statement.executeQuery("PRAGMA user_version")) {
                 version = result.getInt(1);
             }
-            if (version > 3 || version < 0)
+            if (version > 4 || version < 0)
                 throw new SQLException("Unsupported database schema " + version + "; refusing migration");
             if (version > 0) verifyPlayers(statement);
             if (version >= 2) verifyHydration(statement);
-            if (version < 3) {
+            if (version >= 3) verifyEnvironment(statement);
+            if (version >= 4) verifySeasons(statement);
+            if (version < 4) {
                 connection.setAutoCommit(false);
                 try {
                     if (version == 0) statement.execute("""
@@ -42,14 +44,21 @@ public final class Database implements AutoCloseable {
                           dry_seconds REAL NOT NULL CHECK(dry_seconds >= 0)
                         )
                         """);
-                    statement.execute("""
+                    if (version < 3) statement.execute("""
                         CREATE TABLE environment_players (
                           uuid TEXT PRIMARY KEY NOT NULL,
                           temperature REAL NOT NULL CHECK(temperature >= -100 AND temperature <= 100),
                           wetness REAL NOT NULL CHECK(wetness >= 0 AND wetness <= 100)
                         )
                         """);
-                    statement.execute("PRAGMA user_version=3");
+                    statement.execute("""
+                        CREATE TABLE season_state (
+                          world_uuid TEXT PRIMARY KEY NOT NULL,
+                          season TEXT NOT NULL CHECK(season IN ('DRY','TRANSITION_TO_WET','WET','MONSOON','TRANSITION_TO_DRY')),
+                          elapsed_ticks INTEGER NOT NULL CHECK(elapsed_ticks >= 0)
+                        )
+                        """);
+                    statement.execute("PRAGMA user_version=4");
                     connection.commit();
                 } catch (SQLException failure) {
                     connection.rollback();
@@ -81,6 +90,14 @@ public final class Database implements AutoCloseable {
         try (ResultSet ignored = statement.executeQuery(
                 "SELECT uuid,hydration,hud_enabled,dry_seconds FROM hydration_players LIMIT 0")) {
         }
+    }
+
+    private static void verifyEnvironment(Statement statement) throws SQLException {
+        try (ResultSet ignored = statement.executeQuery("SELECT uuid,temperature,wetness FROM environment_players LIMIT 0")) {}
+    }
+
+    private static void verifySeasons(Statement statement) throws SQLException {
+        try (ResultSet ignored = statement.executeQuery("SELECT world_uuid,season,elapsed_ticks FROM season_state LIMIT 0")) {}
     }
 
     Connection connection() {

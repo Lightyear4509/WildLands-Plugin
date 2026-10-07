@@ -82,6 +82,7 @@ public final class EnvironmentService implements Listener {
             if (temperatureEnabled) next = next.withTemperature(EnvironmentRules.temperature(settings,
                     biomeTemperature(player) + EnvironmentRules.dailyAdjustment(settings, player.getWorld().getTime(),
                             player.getWorld().getEnvironment() == World.Environment.NORMAL)
+                            + (plugin.seasons() == null ? 0 : plugin.seasons().temperatureDelta(player.getWorld()))
                             + EnvironmentRules.activityAdjustment(settings, player.isSprinting()),
                     player.getLocation().getY(), exposure.rain(), exposure.immersed(), status));
             if (wetnessEnabled) next = EnvironmentRules.wetness(next, settings, settings.sampleSeconds(),

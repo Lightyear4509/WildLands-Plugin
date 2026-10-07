@@ -27,7 +27,7 @@ class HydrationRepositoryTest {
             assertEquals(new PlayerRecord(id, "PreviousPlayer", 100, 200), new PlayerRepository(db).find(id).orElseThrow());
             assertTrue(new HydrationRepository(db).find(id).isEmpty());
             try (Statement statement = db.connection().createStatement(); ResultSet row = statement.executeQuery("PRAGMA user_version")) {
-                assertEquals(3, row.getInt(1));
+                assertEquals(4, row.getInt(1));
             }
         }
     }

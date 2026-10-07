@@ -6,8 +6,8 @@ The current user goal is to complete all nine milestones from SPEC.md and commit
 | --- | --- | --- |
 | 1 | Foundation, modules, configuration, SQLite, UUID records, commands, crossplay bridges, debug | Accepted: 26 automated tests, real server checks, Java/Bedrock commands and reconnects, permission denial, and restart persistence passed |
 | 2 | Hydration, water identification, drinking, treatment/boiling, HUD, persistence | Accepted: 54 automated tests, Paper lifecycle/configuration checks, and Java/Bedrock hydration, water-source, boiling, rainwater, HUD, permission, and restart-persistence validation passed |
-| 3 | Temperature, wetness, shade, fire warmth, shelter | Implemented; clean build and 74 tests passed; core Java/Bedrock checks passed; final live rate/balance checks deferred by user |
-| 4 | Seasons, rainfall, temperature effects, crops, weather | Not started |
+| 3 | Temperature, wetness, shade, fire warmth, shelter | Committed locally as 0f73ee6; clean build and 74 tests passed; core Java/Bedrock checks passed; final live rate/balance checks deferred by user |
+| 4 | Seasons, rainfall, temperature effects, crops, weather | Implemented and reviewed: clean build, 89 tests, real Paper console commands/reload and restart persistence passed; live crossplay checks deferred |
 | 5 | Deterministic rainforest regions and terrain, disposable development worlds | Not started |
 | 6 | One polished wildlife species, initially Jaguar, with crossplay representation | Not started |
 | 7 | Survival crafting and camp/settlement equipment | Not started |

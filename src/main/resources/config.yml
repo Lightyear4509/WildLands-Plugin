@@ -9,5 +9,6 @@ modules:
   temperature: true
   wetness: true
   shelter: true
+  seasons: true
 debug:
   enabled: true

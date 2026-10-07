@@ -22,6 +22,7 @@ public final class WildlandsPlugin extends JavaPlugin {
     private gg.ggwp.wildlands.survival.HydrationService hydration;
     private gg.ggwp.wildlands.survival.ShelterService shelter;
     private gg.ggwp.wildlands.survival.EnvironmentService environment;
+    private gg.ggwp.wildlands.seasons.SeasonManager seasons;
     private CrossplayService crossplay;
     private boolean reloading;
     private final gg.ggwp.wildlands.survival.CauldronWater cauldronWater = new gg.ggwp.wildlands.survival.CauldronWater();
@@ -41,6 +42,9 @@ public final class WildlandsPlugin extends JavaPlugin {
         var hydrationCommand = Objects.requireNonNull(getCommand("hydration"));
         hydrationCommand.setExecutor(hydrationHandler);
         hydrationCommand.setTabCompleter(hydrationHandler);
+        var seasonHandler = new gg.ggwp.wildlands.commands.SeasonCommand(this);
+        var seasonCommand = Objects.requireNonNull(getCommand("season"));
+        seasonCommand.setExecutor(seasonHandler); seasonCommand.setTabCompleter(seasonHandler);
         storage.submit(() -> {
             var loaded = configuration.load();
             storage.open(getDataFolder().toPath().resolve(loaded.settings().databaseFile()));
@@ -55,6 +59,8 @@ public final class WildlandsPlugin extends JavaPlugin {
                 hydration = new gg.ggwp.wildlands.survival.HydrationService(this, storage);
                 modules.register(hydration);
                 modules.register(new gg.ggwp.wildlands.ui.HudManager(this, hydration));
+                seasons = new gg.ggwp.wildlands.seasons.SeasonManager(this, storage);
+                modules.register(seasons);
                 shelter = new gg.ggwp.wildlands.survival.ShelterService(this);
                 environment = new gg.ggwp.wildlands.survival.EnvironmentService(this, storage, shelter);
                 modules.register(environment.temperatureModule());
@@ -85,6 +91,8 @@ public final class WildlandsPlugin extends JavaPlugin {
                     throw new IllegalArgumentException("Boiling duration changes require a server restart; no settings changed");
                 if (candidate.environment().sampleSeconds() != config.environment().sampleSeconds())
                     throw new IllegalArgumentException("Environment sampling interval changes require a server restart; no settings changed");
+                if (candidate.seasons().clockSeconds() != config.seasons().clockSeconds())
+                    throw new IllegalArgumentException("Season clock interval changes require a server restart; no settings changed");
                 var previous = config;
                 config = candidate;
                 try {
@@ -125,6 +133,7 @@ public final class WildlandsPlugin extends JavaPlugin {
     public ModuleManager modules() { return modules; }
     public gg.ggwp.wildlands.survival.HydrationService hydration() { return hydration; }
     public gg.ggwp.wildlands.survival.EnvironmentService environment() { return environment; }
+    public gg.ggwp.wildlands.seasons.SeasonManager seasons() { return seasons; }
     public gg.ggwp.wildlands.survival.ShelterService shelter() { return shelter; }
     public PlayerManager players() { return players; }
     public StorageService storage() { return storage; }
