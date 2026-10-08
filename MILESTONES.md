@@ -12,7 +12,7 @@ The current user goal is to complete all nine milestones from SPEC.md and commit
 | 6 | One polished wildlife species, initially Jaguar, with crossplay representation | Implemented and reviewed: clean build, 110 tests, real jaguar spawn, fire/prey behavior, module toggles, UUID/home restart and death cleanup passed; live human/crossplay acceptance deferred |
 | 7 | Survival crafting and camp/settlement equipment | Implemented and reviewed: clean build, 123 tests, native equipment/refill recipes, rain/filter/preservation/cooking, fuel modifier, module toggles and station restart persistence passed; live crossplay checks deferred |
 | 8 | Landmarks, ruins, discoveries, navigation, expeditions | Implemented and reviewed: clean build, 137 tests, native ruins/compass metadata, schema upgrade, module reload and isolated UUID/camp/expedition restart checks passed; live crossplay checks deferred |
-| 9 | Performance, balance, resource packs, multiplayer/crossplay polish, admin tools/docs | Not started |
+| 9 | Performance, balance, resource packs, multiplayer/crossplay polish, admin tools/docs | Implemented and reviewed: 147 automated tests, preserved terrain fingerprints, native optional-provider startup, distant-generation replay, module reload/restart and admin health checks; collective build/checklist supplied; live multiplayer/crossplay and extended load/balance checks deferred |
 
 ## Gate for each milestone
 

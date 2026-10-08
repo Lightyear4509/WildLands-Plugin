@@ -108,4 +108,14 @@ class WildlandsCommandTest {
         verify(sender).sendMessage("[Wildlands] Foundation is starting.");
         verify(plugin, never()).storage();
     }
+    @Test void healthAliasIsPermissionGatedAndConsoleSafe() {
+        run("admin", "health"); verify(sender).sendMessage("[Custom] Denied"); verify(plugin, never()).storage();
+        when(sender.hasPermission("ggwpwildlands.admin.debug")).thenReturn(true);
+        var server = mock(Server.class); when(plugin.getServer()).thenReturn(server); when(server.getTPS()).thenReturn(new double[]{20.01, 20, 20});
+        when(server.getAverageTickTime()).thenReturn(12.5); when(plugin.players()).thenReturn(mock(PlayerManager.class));
+        when(plugin.storage()).thenReturn(mock(StorageService.class)); when(plugin.crossplay()).thenReturn(mock(CrossplayService.class));
+        when(plugin.modules()).thenReturn(new ModuleManager()); run("admin", "health");
+        verify(sender).sendMessage("[Custom] Server: 20.00 TPS (1m); 12.50 ms average tick");
+        assertEquals(List.of("health"), handler.onTabComplete(sender, command, "wildlands", new String[]{"admin", "he"}));
+    }
 }

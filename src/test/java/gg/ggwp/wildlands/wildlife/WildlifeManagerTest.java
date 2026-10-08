@@ -61,4 +61,19 @@ class WildlifeManagerTest {
         verify(storage).submit(captor.capture()); captor.getValue().run();
         verify(storage).saveWildlife(List.of(record.dead()));
     }
+    @Test void loadingASavedCorpseRemovesItWithoutRecreatingItsRegistryOrAi() throws Exception {
+        var world = mock(World.class); when(world.getName()).thenReturn("wildlands"); when(world.getEnvironment()).thenReturn(World.Environment.NORMAL);
+        var cat = mock(Ocelot.class); var data = mock(PersistentDataContainer.class); UUID id = UUID.randomUUID();
+        when(cat.getUniqueId()).thenReturn(id); when(cat.getWorld()).thenReturn(world); when(cat.getPersistentDataContainer()).thenReturn(data);
+        when(cat.isDead()).thenReturn(true); when(data.has(any(NamespacedKey.class), eq(PersistentDataType.BYTE))).thenReturn(true);
+        when(world.getEntities()).thenReturn(List.of(cat)); when(server.getWorlds()).thenReturn(List.of(world));
+        var scheduler = mock(BukkitScheduler.class); when(server.getScheduler()).thenReturn(scheduler);
+        when(scheduler.runTaskTimer(eq(plugin), any(Runnable.class), anyLong(), anyLong())).thenReturn(mock(BukkitTask.class));
+        var record = new WildlifeRecord(id, UUID.randomUUID(), 0, 65, 0, true);
+        var manager = new WildlifeManager(plugin, storage, List.of(record)); manager.enable();
+        verify(cat).remove(); verify(server, never()).getMobGoals();
+        assertTrue(manager.diagnostics().getFirst().contains("registered=0; loaded=0"));
+        @SuppressWarnings("rawtypes") var work = ArgumentCaptor.forClass(StorageService.Work.class);
+        verify(storage).submit(work.capture()); work.getValue().run(); verify(storage).saveWildlife(List.of(record.dead()));
+    }
 }

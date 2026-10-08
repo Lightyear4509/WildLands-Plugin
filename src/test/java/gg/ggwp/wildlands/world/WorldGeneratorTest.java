@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 class WorldGeneratorTest {
     @SuppressWarnings({"deprecation", "removal"})
-    private static class Buffer implements ChunkGenerator.ChunkData {
+    static class Buffer implements ChunkGenerator.ChunkData {
         final Material[] blocks = new Material[16 * 384 * 16];
         Buffer() { Arrays.fill(blocks, Material.AIR); }
         int index(int x, int y, int z) {

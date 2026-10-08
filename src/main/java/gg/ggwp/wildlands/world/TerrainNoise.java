@@ -24,6 +24,11 @@ public final class TerrainNoise {
         return mix(low, high, fz) * 2 - 1;
     }
     public static double surface(long seed, int x, int z, double scale) {
-        return sample(seed, x / scale, 0, z / scale);
+        double sx = x / scale, sz = z / scale;
+        long ix = (long) Math.floor(sx), iz = (long) Math.floor(sz);
+        double fx = smooth(sx - ix), fz = smooth(sz - iz);
+        // The y=0 slice needs only four corners; retain the same interpolation order.
+        return mix(mix(unit(seed, ix, 0, iz), unit(seed, ix + 1, 0, iz), fx),
+                mix(unit(seed, ix, 0, iz + 1), unit(seed, ix + 1, 0, iz + 1), fx), fz) * 2 - 1;
     }
 }

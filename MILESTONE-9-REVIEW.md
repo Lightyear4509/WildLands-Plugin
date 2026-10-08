@@ -1,0 +1,20 @@
+# Milestone 9 review — polish and collective build
+
+SPEC.md was read completely before implementation. All nine milestones were authorized; the user explicitly deferred live Java/Bedrock checks to one collective build. This review records implementation and automated/native evidence without treating deferred client checks as passed.
+
+| Requirement | Final implementation | Verification |
+| --- | --- | --- |
+| Performance | Four-corner surface noise, early cave-sheet rejection, reuse of chunk columns, bounded fixed spawn selection and trimmed station queues on lower-cap reload | Complete pre-change chunk SHA-256 fingerprints for both frozen profiles; exact noise equivalence, deterministic dry spawn and cap-preservation regressions; native distant generation and prior workload replay |
+| Balance | Slow depletion, zero-only delayed damage, probabilistic unsafe water, modest food/gear benefits, bounded ordinary-health predator and cosmetic exploration; fresh seasons include wildlands | Existing rules/configuration suite plus documented tuning; extended human balance sessions deferred |
+| Resource packs | Independent edition-specific representation and future asset/mapping documentation; all current visuals remain usable vanilla equivalents | Asset/API audit: no custom models, required pack or client mod introduced |
+| Bedrock consistency | Maximum 96-character HUD, short transition seasons/cross-world routes, main-hand native interfaces and identical authoritative state | HUD boundaries/disabled fields and native compass/item tests; actual new client presentation deferred |
+| Multiplayer testing | Concurrent Java-shaped/Floodgate-shaped UUID sessions with drinks/preferences/restart isolation; discovery/camp privacy and persistence | 32-session hydration integration test against SQLite plus two-player exploration tests; simultaneous human gameplay deferred |
+| Admin tools | Permission-gated console health alias, TPS/tick time, module/storage/provider/station/landmark/wildlife/world diagnostics | Command permission/completion tests and real console output with/without providers |
+| Stability | Stale saved jaguar corpses removed without recreated AI/home records; invalid reloads retain configuration; normal shutdown persists data | Corpse regression, failure/retry/migration suite and native combined-module reload/restart checks |
+| Documentation/delivery | Updated README, edition matrix, operations/balance guide, one final checklist and reproducible release ZIP | Clean Java 25 build and archive inspection; native validation in docs/validation/milestone-9-server.md |
+
+The automated suite passes 147 tests with zero failures/errors. Existing generator versions are not changed: five complete representative chunk buffers per profile match fingerprints captured before optimization, including negative/distant coordinates and the version-2 ruin chunk. No schema change beyond Milestone 8's schema 7 is needed. Existing world/player/item data remains authoritative in its established storage.
+
+The combined 0.9.0 build includes foundation, hydration, environment, seasons, deterministic rainforest generation, Jaguar, survival crafting and exploration. SQLite and configuration defaults are bundled; no Geyser/Floodgate runtime or client assets are bundled. Optional providers can be absent, and installed providers remain detected through guarded bridges.
+
+Remaining acceptance is documented in docs/FINAL-TEST-CHECKLIST.md: later-milestone client visuals/controls, simultaneous real Java/Bedrock play, broader terrain exploration and longer balance/load sessions. Prior M1–M3 live results remain historical evidence, not a claim that the final artifact was manually retested. Resource packs are conditional on custom visuals; current equivalent vanilla representation needs none. Jaguar remains the single initial species. Dynamic terrain floods, settlement claims, extra species, detailed nutrition/spoilage and custom visual packs are optional broader vision, not added as artificial milestone requirements.

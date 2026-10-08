@@ -24,10 +24,12 @@ public final class WorldGenerator extends ChunkGenerator {
     }
     @Override public void generateNoise(WorldInfo info, Random ignored, int chunkX, int chunkZ, ChunkData data) {
         var terrain = model(info);
+        var columns = new TerrainModel.Column[16][16];
         long seed = info.getSeed();
         for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) {
             int wx = chunkX * 16 + x, wz = chunkZ * 16 + z;
             var column = terrain.column(wx, wz);
+            columns[x][z] = column;
             data.setRegion(x, data.getMinHeight(), z, x + 1, column.groundY() + 1, z + 1, Material.STONE);
             for (int y = data.getMinHeight(); y <= column.groundY(); y++) {
                 if (y < data.getMinHeight() + 1 + TerrainNoise.unit(seed, wx, y, wz) * 3) {
@@ -49,7 +51,7 @@ public final class WorldGenerator extends ChunkGenerator {
                     data.setBlock(x, y, z, y == column.groundY() ? surface : surface == Material.STONE ? Material.STONE : Material.DIRT);
             if (column.submerged()) data.setRegion(x, column.groundY() + 1, z, x + 1, column.waterY() + 1, z + 1, Material.WATER);
         }
-        decorate(info, terrain, chunkX, chunkZ, data);
+        decorate(info, terrain, columns, chunkX, chunkZ, data);
         if (settings.version() >= 2) LandmarkPlanner.inChunk(seed, settings, info.getMinHeight(), info.getMaxHeight(), chunkX, chunkZ)
                 .ifPresent(candidate -> StructureManager.ruin(seed, candidate, chunkX, chunkZ, data));
     }
@@ -66,7 +68,7 @@ public final class WorldGenerator extends ChunkGenerator {
         if (cluster < .080 && y > -16) return deep ? Material.DEEPSLATE_COPPER_ORE : Material.COPPER_ORE;
         return deep ? Material.DEEPSLATE_COAL_ORE : Material.COAL_ORE;
     }
-    private void decorate(WorldInfo info, TerrainModel terrain, int cx, int cz, ChunkData data) {
+    private void decorate(WorldInfo info, TerrainModel terrain, TerrainModel.Column[][] columns, int cx, int cz, ChunkData data) {
         int originX = cx * 16, originZ = cz * 16;
         // Every chunk reproduces candidates from the same surrounding lattice and clips writes locally.
         for (int gx = Math.floorDiv(originX - 8, 9); gx <= Math.floorDiv(originX + 23, 9); gx++)
@@ -118,7 +120,7 @@ public final class WorldGenerator extends ChunkGenerator {
                         place(data, rx + dx - originX, column.groundY() + dy + 1, rz + dz - originZ, Material.MOSSY_COBBLESTONE);
             }
         for (int x = 0; x < 16; x++) for (int z = 0; z < 16; z++) {
-            var column = terrain.column(originX + x, originZ + z);
+            var column = columns[x][z];
             if (column.submerged()) continue;
             int y = column.groundY() + 1;
             if (settings.caves() && terrain.cave(originX + x, column.groundY(), originZ + z, column)) continue;
@@ -143,6 +145,12 @@ public final class WorldGenerator extends ChunkGenerator {
     }
     private static boolean air(Material material) { return material == Material.AIR || material == Material.CAVE_AIR || material == Material.VOID_AIR; }
     @Override public BiomeProvider getDefaultBiomeProvider(WorldInfo info) { return new BiomeManager(settings); }
+    @Override public Location getFixedSpawnLocation(World world, Random random) {
+        var spawn = SpawnPlanner.find(world.getSeed(), settings, world.getMinHeight(), world.getMaxHeight());
+        // Paper calls this on the server thread. One chosen column avoids its broad biome spawn search.
+        int y = world.getHighestBlockYAt(spawn.x(), spawn.z(), HeightMap.MOTION_BLOCKING_NO_LEAVES) + 1;
+        return new Location(world, spawn.x() + .5, y, spawn.z() + .5);
+    }
     @Override public int getBaseHeight(WorldInfo info, Random random, int x, int z, HeightMap map) {
         var column = model(info).column(x, z);
         return (map == HeightMap.OCEAN_FLOOR || map == HeightMap.OCEAN_FLOOR_WG

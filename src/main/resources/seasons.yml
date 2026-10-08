@@ -1,6 +1,6 @@
 schema-version: 1
 # Only explicitly listed Overworlds are managed. Nether/End weather stays vanilla.
-worlds: [world]
+worlds: [world, wildlands]
 clock-seconds: 10
 # Probability of rain per evaluation, and conditional thunder probability during rain.
 weather-seconds: 300

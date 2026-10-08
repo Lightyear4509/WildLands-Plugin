@@ -21,6 +21,7 @@ class ConfigurationTest {
         assertTrue(snapshot.settings().modules().get("worldgen"));
         assertEquals(0.025, snapshot.hydration().lossPerSecond());
         assertEquals(5, snapshot.environment().sampleSeconds());
+        assertTrue(snapshot.seasons().worlds().contains("wildlands"), "Fresh rainforest worlds participate in seasons by default");
     }
     @Test void rejectsMalformedYamlRatherThanOverwritingIt() throws Exception {
         Files.writeString(directory.resolve("config.yml"), "modules: [broken");

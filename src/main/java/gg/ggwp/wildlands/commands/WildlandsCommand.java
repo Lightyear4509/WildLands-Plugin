@@ -30,7 +30,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
                 if (!permitted(sender, USE)) return true;
                 say(sender, "/wildlands status | hud on|off | help; /hydration; /season info");
                 if (sender.hasPermission(ADMIN)) say(sender, "/wildlands reload | admin modules | admin hydration <player> <0..100> | admin temperature <player>");
-                if (sender.hasPermission(DEBUG)) say(sender, "/wildlands admin debug [online-player|uuid]");
+                if (sender.hasPermission(DEBUG)) say(sender, "/wildlands admin health | debug [online-player|uuid]");
                 if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin season <season> [world]");
                 if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin world list | world create <new-name> <seed>");
                 if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin wildlife list | wildlife spawn <world> <x> <y> <z>");
@@ -83,10 +83,10 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
                 if (permitted(sender, ADMIN))
                     plugin.modules().states().forEach((id, state) -> say(sender, id + ": " + state));
             }
-            case "debug" -> {
+            case "health", "debug" -> {
                 if (!permitted(sender, DEBUG)) return;
                 if (!plugin.configuration().settings().debugEnabled()) { say(sender, "Debug is disabled in config.yml."); return; }
-                if (args.length > 3) { say(sender, "Usage: /wildlands admin debug [online-player|uuid]"); return; }
+                if (args.length > 3 || args[1].equalsIgnoreCase("health") && args.length != 2) { say(sender, "Usage: /wildlands admin health | debug [online-player|uuid]"); return; }
                 if (args.length == 2) { debug(sender); return; }
                 Player player = plugin.getServer().getPlayerExact(args[2]);
                 UUID uuid;
@@ -125,6 +125,13 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         long last = plugin.storage().lastSuccessfulSave();
         say(sender, "Last successful save: " + (last == 0 ? "none this session" : Instant.ofEpochMilli(last)));
         say(sender, "Geyser: " + plugin.crossplay().geyserStatus() + "; Floodgate: " + plugin.crossplay().floodgateStatus());
+        if (plugin.crafting() != null) say(sender, plugin.crafting().diagnostics());
+        if (plugin.landmarks() != null) say(sender, plugin.landmarks().diagnostics());
+        if (plugin.wildlife() != null) plugin.wildlife().diagnostics().stream().limit(1).forEach(line -> say(sender, line));
+        if (plugin.worlds() != null) say(sender, "Registered rainforest worlds: " + plugin.worlds().records().size());
+        double[] tps = plugin.getServer().getTPS();
+        if (tps != null && tps.length > 0) say(sender, String.format(Locale.ROOT,
+                "Server: %.2f TPS (1m); %.2f ms average tick", Math.min(20, tps[0]), plugin.getServer().getAverageTickTime()));
         plugin.modules().states().forEach((id, state) -> say(sender, id + ": " + state));
     }
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
@@ -138,7 +145,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
             options.addAll(List.of("on", "off"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
             if (sender.hasPermission(ADMIN)) options.addAll(List.of("modules", "hydration", "temperature", "season", "world", "wildlife", "crafting", "landmarks"));
-            if (sender.hasPermission(DEBUG)) options.add("debug");
+            if (sender.hasPermission(DEBUG)) options.addAll(List.of("debug", "health"));
         } else if (args.length == 3 && args[0].equalsIgnoreCase("admin")
                 && ((args[1].equalsIgnoreCase("debug") && sender.hasPermission(DEBUG))
                 || ((args[1].equalsIgnoreCase("hydration") || args[1].equalsIgnoreCase("temperature")) && sender.hasPermission(ADMIN)))) {

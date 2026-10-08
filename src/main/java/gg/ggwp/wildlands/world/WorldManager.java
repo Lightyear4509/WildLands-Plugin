@@ -63,16 +63,8 @@ public final class WorldManager implements WildlandsModule {
         return world;
     }
     private void chooseSpawn(World world, WorldRecord record) {
-        var terrain = new TerrainModel(record.seed(), record.settings().seaLevel(), world.getMinHeight(), world.getMaxHeight());
-        for (int radius = 0; radius <= 256; radius += 16) for (int x = -radius; x <= radius; x += 16)
-            for (int z = -radius; z <= radius; z += 16) {
-                if (Math.max(Math.abs(x), Math.abs(z)) != radius) continue;
-                var column = terrain.column(x, z);
-                if (!column.submerged() && (!record.settings().caves() || !terrain.cave(x, column.groundY(), z, column))) {
-                    world.setSpawnLocation(x, world.getHighestBlockYAt(x, z) + 1, z); return;
-                }
-            }
-        throw new IllegalStateException("No dry spawn was found; set a safe world spawn manually");
+        var spawn = SpawnPlanner.find(record.seed(), record.settings(), world.getMinHeight(), world.getMaxHeight());
+        world.setSpawnLocation(spawn.x(), world.getHighestBlockYAt(spawn.x(), spawn.z(), HeightMap.MOTION_BLOCKING_NO_LEAVES) + 1, spawn.z());
     }
     public void create(String name, long seed, Consumer<String> reply) {
         if (!enabled) { reply.accept("World generation is disabled in config.yml."); return; }

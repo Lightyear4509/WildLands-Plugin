@@ -35,17 +35,15 @@ public final class HudManager implements WildlandsModule {
         return plugin.modules().states().get("hydration") == ModuleManager.State.ENABLED;
     }
     private String hudText(Player player, gg.ggwp.wildlands.storage.HydrationRecord record) {
-        var fields = new java.util.ArrayList<String>();
-        if (hydrationEnabled()) fields.add("Hydration " + Math.round(record.hydration()) + "%");
-        if (plugin.environment() != null) plugin.environment().record(player.getUniqueId()).ifPresent(value -> {
-            if (plugin.modules().states().get("temperature") == ModuleManager.State.ENABLED)
-                fields.add("Temp " + Math.round(value.temperature()) + "°C");
-            if (plugin.modules().states().get("wetness") == ModuleManager.State.ENABLED)
-                fields.add("Wet " + Math.round(value.wetness()) + "%");
-        });
-        if (plugin.seasons() != null) plugin.seasons().state(player.getWorld())
-                .ifPresent(state -> fields.add("Season " + state.season().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ')));
-        if (plugin.landmarks() != null) plugin.landmarks().navigation(player).ifPresent(route -> fields.add("Route " + route));
-        return String.join(" | ", fields);
+        var environment = plugin.environment() == null ? java.util.Optional.<gg.ggwp.wildlands.storage.EnvironmentRecord>empty()
+                : plugin.environment().record(player.getUniqueId());
+        var states = plugin.modules().states();
+        Double temperature = states.get("temperature") == ModuleManager.State.ENABLED
+                ? environment.map(gg.ggwp.wildlands.storage.EnvironmentRecord::temperature).orElse(null) : null;
+        Double wetness = states.get("wetness") == ModuleManager.State.ENABLED
+                ? environment.map(gg.ggwp.wildlands.storage.EnvironmentRecord::wetness).orElse(null) : null;
+        var season = plugin.seasons() == null ? null : plugin.seasons().state(player.getWorld()).map(state -> state.season()).orElse(null);
+        var route = plugin.landmarks() == null ? null : plugin.landmarks().navigation(player).orElse(null);
+        return HudFormatter.format(hydrationEnabled() ? record.hydration() : null, temperature, wetness, season, route);
     }
 }

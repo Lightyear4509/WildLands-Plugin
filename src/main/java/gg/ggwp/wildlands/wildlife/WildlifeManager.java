@@ -98,6 +98,10 @@ public final class WildlifeManager implements WildlandsModule, Listener {
         if (!enabled || !tagged(entity) || loaded.containsKey(entity.getUniqueId()) || loaded.size() >= settings().maxLoaded()
                 || !managed(entity.getWorld())) return;
         var cat = (Ocelot) entity;
+        if (cat.isDead() || cat.getHealth() <= 0) {
+            // Some saved chunks can contain a corpse awaiting native removal. Never recreate its home record.
+            removed(cat, true); cat.remove(); return;
+        }
         WildlifeRecord record = known.get(cat.getUniqueId());
         if (record == null) {
             var data = cat.getPersistentDataContainer();

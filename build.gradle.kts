@@ -3,7 +3,7 @@ plugins {
     id("com.gradleup.shadow") version "9.2.2"
 }
 group = "gg.ggwp.wildlands"
-version = "0.8.0"
+version = "0.9.0"
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
@@ -38,3 +38,19 @@ tasks.shadowJar {
 }
 tasks.jar { archiveClassifier.set("plain") }
 tasks.build { dependsOn(tasks.shadowJar) }
+
+val releaseBundle by tasks.registering(Zip::class) {
+    dependsOn(tasks.shadowJar)
+    archiveBaseName.set("GGWPWildlands")
+    archiveClassifier.set("release")
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
+    from(tasks.shadowJar)
+    from("README.md", "SPEC.md", "CROSSPLAY-COMPATIBILITY.md", "MILESTONES.md")
+    from(projectDir) { include("MILESTONE-*-REVIEW.md") }
+    from("docs") { into("docs") }
+    from("assets") { into("assets") }
+    from("src/main/resources") { include("*.yml"); exclude("plugin.yml"); into("config-examples") }
+}
+tasks.build { dependsOn(releaseBundle) }

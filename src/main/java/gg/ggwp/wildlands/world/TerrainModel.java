@@ -57,8 +57,9 @@ public final class TerrainModel {
                 || TerrainNoise.unit(seed + 227, Math.floorDiv(x, 16), 0, Math.floorDiv(z, 16)) >= .12)) return false;
         // Intersect two broad sheets to create connected tunnels instead of isolated air bubbles.
         double first = TerrainNoise.sample(seed + 211, x / 43.0, y / 29.0, z / 43.0);
+        if (Math.abs(first) >= .12) return false;
         double second = TerrainNoise.sample(seed + 223, x / 57.0, y / 37.0, z / 57.0);
-        return Math.abs(first) < .12 && Math.abs(second) < .18;
+        return Math.abs(second) < .18;
     }
     public Region region(int x, int y, int z) {
         Column column = column(x, z);

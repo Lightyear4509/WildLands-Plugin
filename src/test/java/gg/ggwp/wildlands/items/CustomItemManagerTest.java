@@ -47,4 +47,24 @@ class CustomItemManagerTest {
         manager.onConsume(event); verify(event).setReplacement(empty); verify(event, never()).setCancelled(true);
         verify(hydration, never()).drink(any(), any()); // Shared native water listener applies exactly one drink.
     }
+    @Test void reducingTheStationCapPrunesScheduledWorkWithoutTouchingNativeContents() {
+        manager.enable();
+        var world = mock(World.class); when(world.getUID()).thenReturn(UUID.randomUUID());
+        for (int i = 0; i < 20; i++) {
+            var barrel = mock(org.bukkit.block.Barrel.class); var data = mock(org.bukkit.persistence.PersistentDataContainer.class);
+            when(barrel.getPersistentDataContainer()).thenReturn(data); when(barrel.getType()).thenReturn(Material.BARREL);
+            when(data.get(eq(SurvivalItems.KIND), eq(org.bukkit.persistence.PersistentDataType.STRING))).thenReturn("RAIN_COLLECTOR");
+            var block = mock(org.bukkit.block.Block.class); when(barrel.getBlock()).thenReturn(block);
+            when(block.getWorld()).thenReturn(world); when(block.getX()).thenReturn(i); when(block.getY()).thenReturn(70);
+            var inventory = mock(org.bukkit.inventory.Inventory.class); when(inventory.getHolder()).thenReturn(barrel);
+            var event = mock(org.bukkit.event.inventory.InventoryOpenEvent.class); when(event.getInventory()).thenReturn(inventory);
+            manager.onOpen(event); verify(inventory, never()).setContents(any());
+        }
+        assertTrue(manager.diagnostics().contains("loaded stations: 20"));
+        var before = plugin.configuration();
+        var crafting = new gg.ggwp.wildlands.config.CraftingSettings(10, 8, 16, .35, 2);
+        when(plugin.configuration()).thenReturn(new ConfigurationManager.Snapshot(before.settings(), before.messages(), before.hydration(),
+                before.environment(), before.seasons(), before.worldgen(), before.wildlife(), crafting, before.food(), before.landmarks()));
+        manager.configurationChanged(); assertTrue(manager.diagnostics().contains("loaded stations: 16"));
+    }
 }

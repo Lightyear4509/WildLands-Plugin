@@ -1,6 +1,6 @@
-# Crossplay compatibility — Milestone 1
+# Crossplay compatibility — combined Milestones 1–9
 
-No client-side mods or resource packs are required. This milestone uses normal server commands/chat and server UUIDs; it introduces no survival mechanics, custom visuals, or HUD.
+No client-side mods or resource packs are required. All gameplay uses authoritative server state and vanilla client representations. Later client checks are deferred to [the collective checklist](docs/FINAL-TEST-CHECKLIST.md), as requested by the user. The first table records historical foundation acceptance; subsequent tables distinguish automation, native Paper checks and actual client observations.
 
 **The local Java + Bedrock foundation acceptance checks passed on 2026-09-17.** Scope: Paper 26.2 build 121, Java client 26.2, Bedrock installed package 1.26.5101.0, Geyser 2.11.3 build 1245, Floodgate 2.2.5 build 140, Windows 11, both clients on the same PC. Server logs independently confirm both logins/reconnects and the Bedrock protocol reported by Geyser. The user confirmed commands worked and admin debug denied permission on both clients.
 
@@ -43,7 +43,7 @@ Use a disposable Paper 26.2 installation running Java 25 and the shaded Wildland
 6. Exercise invalid reload rejection and player-record module toggles on the disposable server.
 7. For any additional deployment topology (proxy, Geyser-only auth), test it explicitly before rollout; no live result is claimed here.
 
-Record client/server/provider versions and actual observations. Assets directories assets/java/ and assets/bedrock/ remain reserved for future milestones.
+Record client/server/provider versions and actual observations. Assets directories assets/java/ and assets/bedrock/ document each edition's native representation and the separate requirements for future optional custom packs.
 
 ## Milestone 2 — accepted
 
@@ -137,3 +137,15 @@ Final combined-build acceptance must craft/place/open/break each station on both
 | Module controls and persistence | Independent landmarks flag, batched schema-7 SQLite data | Same server state | Migration, failed-write recovery and real reload/restart tests pass |
 
 Final acceptance must discover a natural landmark and ruin, review the journal, navigate with a held compass, create/relocate a sheltered camp, travel out and return, and test two simultaneous players with different private camps and discoveries. Check targets across worlds, HUD toggles, reconnect/restart and module disable/re-enable. No client test is marked passed. All visuals are vanilla equivalents; no custom resource pack or client mod is required.
+
+## Milestone 9 — combined build; final client acceptance pending
+
+| Feature | Java | Bedrock through Geyser/Floodgate | Tested |
+| --- | --- | --- | --- |
+| Compact survival/route HUD | Plain action bar, at most 96 characters | Same bounded text and short season/world labels | Automated all-season/long-route/disabled-field cases; final small-screen presentation pending |
+| Native visual equivalents | Vanilla blocks/items/containers and named adult ocelot | Equivalent translated native assets/hitbox | Edition-specific asset audit; later live appearance/control checks deferred |
+| Multiplayer data isolation | Server UUID sessions | Server/Floodgate UUID sessions | 32 synthetic concurrent hydration sessions plus two-player exploration and native UUID restart fixtures; simultaneous human sessions pending |
+| Performance and stability | Same optimized server calculations | Same authoritative generation, AI and persistence | Frozen chunk fingerprints, bounded spawn, station-cap and corpse regressions; native distant workload replay without watchdog dump; extended real load pending |
+| Health/admin tools and optional providers | Permission-gated console/chat diagnostics | Same commands and permissions | Automated denial/completion; actual complete candidate startup with providers absent and present, module controls and restart pass; final client denial check pending |
+
+The full 0.9.0 build passes 147 automated tests. Resource packs remain optional future presentation work: current native equivalents require none, and separate Java/Bedrock asset documentation is maintained. Per the user's instruction, parity is assumed for implementation progress; no deferred client result is called tested. Use docs/FINAL-TEST-CHECKLIST.md for one collective acceptance session and docs/OPERATIONS.md for limits, balance and recovery.

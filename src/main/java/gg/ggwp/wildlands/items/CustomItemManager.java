@@ -51,6 +51,13 @@ public final class CustomItemManager implements WildlandsModule, Listener {
         recipes.disable(); stations.clear(); queue.clear();
     }
     public boolean enabled() { return enabled; }
+    public void configurationChanged() {
+        int cap = plugin.configuration().crafting().maxLoadedStations();
+        var iterator = stations.iterator();
+        int retained = 0;
+        while (iterator.hasNext()) { iterator.next(); if (++retained > cap) iterator.remove(); }
+        queue.removeIf(position -> !stations.contains(position));
+    }
     public String diagnostics() { return "Crafting: " + (enabled ? "enabled" : "disabled") + "; loaded stations: " + stations.size() + "; recipes: " + recipes.keys().size(); }
     private static Position position(Block block) { return new Position(block.getWorld().getUID(), block.getX(), block.getY(), block.getZ()); }
     private Optional<SurvivalItems.Kind> kind(BlockState state) {

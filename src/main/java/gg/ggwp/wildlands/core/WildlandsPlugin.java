@@ -141,6 +141,7 @@ public final class WildlandsPlugin extends JavaPlugin {
                 }
                 crossplay.refresh();
                 wildlife.configurationChanged();
+                crafting.configurationChanged();
                 reply.accept("Configuration reloaded.");
             } catch (Exception error) {
                 report("Configuration reload rejected; previous configuration retained", error);
