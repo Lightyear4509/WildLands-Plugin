@@ -1,0 +1,10 @@
+schema-version: 1
+# Each loaded station receives at most one operation per visit; no offline catch-up.
+sample-seconds: 10
+batch-size: 8
+max-loaded-stations: 512
+rain-cloak:
+  # Applies only to rain, not immersion; armor still follows vanilla durability.
+  multiplier: 0.35
+improved-stove:
+  fuel-multiplier: 2.0

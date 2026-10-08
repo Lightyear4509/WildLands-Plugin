@@ -87,6 +87,9 @@ public final class EnvironmentService implements Listener {
                     player.getLocation().getY(), exposure.rain(), exposure.immersed(), status));
             if (wetnessEnabled) next = EnvironmentRules.wetness(next, settings, settings.sampleSeconds(),
                     exposure.rain(), exposure.immersed(), status);
+            if (wetnessEnabled && plugin.crafting() != null) next = next.withWetness(
+                    gg.ggwp.wildlands.items.StationRules.cloakWetness(session.record.wetness(), next.wetness(),
+                            exposure.rain(), exposure.immersed(), plugin.crafting().rainMultiplier(player)));
             session.record = next;
         }
     }

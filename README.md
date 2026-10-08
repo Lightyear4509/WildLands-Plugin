@@ -1,6 +1,6 @@
 # GGWP Wildlands
 
-Server-authoritative rainforest survival project. **Milestones 1–6 are implemented.** Hydration adds drinking, water quality, campfire boiling and an optional action-bar HUD. Environment adds temperature, wetness, shade, campfire warmth and shelter status. Seasons add per-world clocks, weather, temperature and natural crop-growth modifiers. World generation adds deterministic rainforest regions, waterways, canopy, caves and mining resources. Wildlife adds territorial jaguars. Further live checks are deferred to the combined build at the user's request; actual test status is recorded in CROSSPLAY-COMPATIBILITY.md.
+Server-authoritative rainforest survival project. **Milestones 1–7 are implemented.** Hydration adds drinking, water quality, campfire boiling and an optional action-bar HUD. Environment adds temperature, wetness, shade, campfire warmth and shelter status. Seasons add per-world clocks, weather, temperature and natural crop-growth modifiers. World generation adds deterministic rainforest regions, waterways, canopy, caves and mining resources. Wildlife adds territorial jaguars. Crafting adds camp equipment, water filtration, portable supplies and food preservation. Further live checks are deferred to the combined build at the user's request; actual test status is recorded in CROSSPLAY-COMPATIBILITY.md.
 
 ## Requirements and build
 
@@ -20,7 +20,7 @@ Linux/macOS:
 sh ./gradlew clean build
 ```
 
-Install **`build/libs/GGWPWildlands-0.6.0.jar`**. The `-plain.jar` is a development artifact without SQLite; do not install it. Tests run during `build`; HTML results are in `build/reports/tests/test/index.html`. Milestones 7–9 remain; this is an intermediate build, not the final combined release.
+Install **`build/libs/GGWPWildlands-0.7.0.jar`**. The `-plain.jar` is a development artifact without SQLite; do not install it. Tests run during `build`; HTML results are in `build/reports/tests/test/index.html`. Milestones 8–9 remain; this is an intermediate build, not the final combined release.
 
 The build targets Java 25 bytecode and pins Paper API `26.2.build.121-stable`. SQLite is bundled in the distributable, including its native libraries and JDBC service descriptor. No runtime dependency download is required by Wildlands. The Gradle wrapper distribution is SHA-256 pinned, and dependency versions are locked in gradle.lockfile. SQLite uses Paper's provided SLF4J API rather than bundling a second logging API. Java 25 may warn about SQLite native-library access unless the server is launched with --enable-native-access=ALL-UNNAMED.
 
@@ -29,7 +29,7 @@ The build targets Java 25 bytecode and pins Paper API `26.2.build.121-stable`. S
 1. Install Java 25 and a Paper **26.2** server.
 2. Stop the server and copy the distributable into `plugins/`.
 3. Start the server. Look for **Foundation ready** in the log.
-4. Configure `plugins/GGWPWildlands/config.yml`, `messages.yml`, `hydration.yml`, `environment.yml`, `seasons.yml`, `worldgen.yml`, and `wildlife.yml`.
+4. Configure `plugins/GGWPWildlands/config.yml`, `messages.yml`, `hydration.yml`, `environment.yml`, `seasons.yml`, `worldgen.yml`, `wildlife.yml`, `crafting.yml`, and `food.yml`.
 5. Run `wildlands admin debug` from the server console.
 
 Geyser-Spigot and Floodgate are optional. Install/configure their official server plugins to support Bedrock connections. Wildlands requires no client mod or resource pack. Do not install the plain and shaded JARs together. Use a full server restart for plugin updates; Bukkit/server hot reload is unsupported.
@@ -72,6 +72,8 @@ modules:
   seasons: true
   worldgen: true
   wildlife: true
+  crafting: true
+  nutrition: true
 debug:
   enabled: true
 ```
@@ -86,6 +88,33 @@ debug:
 - Future gameplay modules are not registered and cannot be enabled accidentally.
 
 The configuration loader validates a candidate snapshot on the storage worker, then applies it on the server thread. Module lifecycle failures trigger cleanup and reverse-order rollback. Shutdown stops modules in reverse registration order.
+
+## Survival crafting (Milestone 7)
+
+Enable `crafting` and `nutrition` in `config.yml` for an existing installation; missing flags remain false when upgrading. Fresh installs enable both. `/wildlands crafting` explains equipment. Recipes are discovered on join and module enable; use a standard crafting table and recipe book. Recipe definitions are in `items/RecipeManager.java`.
+
+| Equipment | Native interface | Use |
+| --- | --- | --- |
+| Rain Collector | Barrel | Empty glass bottles become clean water while rain reaches the open collector; roofs, dry biomes and snow prevent collection |
+| Basic Water Filter | Barrel | One charcoal per step: contaminated → questionable → untreated; boil the result before drinking |
+| Improved Water Filter | Barrel | One charcoal turns any unsafe freshwater bottle clean; salt is never treated |
+| Cooking Rack | Smoker | Ordinary food cooking and fuel; affordable campfire/iron-nugget recipe |
+| Water Boiler | Furnace | Native furnace recipe boils standard freshwater bottles; ordinary furnaces also support it |
+| Charcoal Kiln | Furnace | Ordinary log-to-charcoal smelting; campfire/cobblestone construction |
+| Improved Stove | Smoker | Same cooking interface with twice the fuel duration by default |
+| Food Drying Rack | Barrel | One cooked meat/fish and charcoal become preserved food, under a roof within three blocks horizontally and two vertically of a lit campfire |
+| Rain Cloak | Leather chestplate | Reduces rain wetness gain to 35% by default; swimming and drying remain normal |
+| Waterskin | Water potion / empty bottle | Three normal drinks of clean water; native consumption retains the remaining charges and finally returns an empty skin |
+
+The waterskin is made with three leather and three standard Clean Water bottles in a shapeless recipe. Refill its empty skin with three standard Clean Water bottles. The three bottles are transferred into the skin and consumed by crafting; there are no extra bottle outputs. Empty skins cannot scoop river water or be processed by stations. Anvil-renamed water bottles/equipment may not match exact upgrade/refill recipes; use the standard crafted items. Native consumption and placement use the main hand on either edition; no offhand dependency exists.
+
+`crafting.yml` controls station cadence, batch size, loaded-station cap, cloak protection and stove fuel efficiency. At defaults, up to eight loaded barrel stations perform one operation every ten seconds, rotating fairly; more stations increase the time between visits. Full inventories consume nothing. Stations do not accumulate offline work, force-load chunks, or scan all containers continually. At the loaded cap, additional stations remain ordinary storage until capacity is available and they are reopened or their chunk reloads. Changing cadence or water boiling duration requires a server restart. Disable crafting to remove recipes/tasks and gear effects; stored contents and item identity remain intact. Tagged waterskins cannot be consumed while crafting or hydration is disabled, or hydration data is loading.
+
+`food.yml` controls the modest preserved-food saturation bonus (default 1); the independently disabled `nutrition` module removes that bonus. Vanilla hunger and ordinary foods remain viable. Preservation adds no spoilage timer or food-category penalties.
+
+Station identity uses native TileState persistent data; inventories and item tags are saved in Minecraft chunks/player inventories. Break a station normally to retain its equipment item and normal content drops. Destruction by fire/explosion can lose station identity through ordinary vanilla drops. Back up the world and player data alongside SQLite: this avoids conflicting copies of native container contents in a second database. No SQLite migration is needed for this milestone.
+
+Operators/console can inspect `/wildlands admin crafting info` or give one item with `/wildlands admin crafting give <exact-online-player> <item>`; tab completion lists item identifiers. Giving to a full inventory is refused. Recipes do not gate or remove ordinary vanilla progression. No mod or resource pack is required. See `MILESTONE-7-REVIEW.md` and the crossplay matrix for verification and deferred client checks.
 
 ## Architecture and persistence
 

@@ -35,6 +35,8 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
                 if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin world list | world create <new-name> <seed>");
                 if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin wildlife list | wildlife spawn <world> <x> <y> <z>");
                 say(sender, "Collect and treat water to maintain hydration.");
+                say(sender, "/wildlands crafting — survival equipment and station guide");
+                if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin crafting info | crafting give <player> <item>");
             }
             case "status" -> {
                 if (!permitted(sender, USE)) return true;
@@ -49,6 +51,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
                 }
             }
             case "hud" -> new HydrationCommand(plugin).hud(sender, args);
+            case "crafting" -> { if (permitted(sender, USE)) new CraftingCommand(plugin).guide(sender); }
             case "reload" -> {
                 if (permitted(sender, ADMIN)) {
                     if (args.length != 1) say(sender, "Usage: /wildlands reload");
@@ -66,6 +69,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
             return;
         }
         switch (args[1].toLowerCase(Locale.ROOT)) {
+            case "crafting" -> new CraftingCommand(plugin).admin(sender, args);
             case "wildlife" -> new WildlifeCommand(plugin).admin(sender, args);
             case "world" -> new WorldCommand(plugin).admin(sender, args);
             case "season" -> new SeasonCommand(plugin).admin(sender, args);
@@ -123,13 +127,13 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         if (plugin.state() != WildlandsPlugin.State.READY) return List.of();
         List<String> options = new ArrayList<>();
         if (args.length == 1) {
-            if (sender.hasPermission(USE)) options.addAll(List.of("help", "status", "hud"));
+            if (sender.hasPermission(USE)) options.addAll(List.of("help", "status", "hud", "crafting"));
             if (sender.hasPermission(ADMIN)) options.add("reload");
             if (sender.hasPermission(ADMIN) || sender.hasPermission(DEBUG)) options.add("admin");
         } else if (args.length == 2 && args[0].equalsIgnoreCase("hud") && sender.hasPermission(USE)) {
             options.addAll(List.of("on", "off"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
-            if (sender.hasPermission(ADMIN)) options.addAll(List.of("modules", "hydration", "temperature", "season", "world", "wildlife"));
+            if (sender.hasPermission(ADMIN)) options.addAll(List.of("modules", "hydration", "temperature", "season", "world", "wildlife", "crafting"));
             if (sender.hasPermission(DEBUG)) options.add("debug");
         } else if (args.length == 3 && args[0].equalsIgnoreCase("admin")
                 && ((args[1].equalsIgnoreCase("debug") && sender.hasPermission(DEBUG))
@@ -147,6 +151,13 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
             options.addAll(List.of("list", "spawn"));
         if (args.length == 4 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("wildlife") && sender.hasPermission(ADMIN))
             plugin.getServer().getWorlds().forEach(world -> options.add(world.getName()));
+        if (args.length >= 3 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("crafting") && sender.hasPermission(ADMIN)) {
+            if (args.length == 3) options.addAll(List.of("info", "give"));
+            if (args.length == 4 && args[2].equalsIgnoreCase("give")) for (Player player : plugin.getServer().getOnlinePlayers())
+                if (!(sender instanceof Player viewer) || viewer.canSee(player)) options.add(player.getName());
+            if (args.length == 5 && args[2].equalsIgnoreCase("give")) for (var kind : gg.ggwp.wildlands.items.SurvivalItems.Kind.values())
+                options.add(kind.name().toLowerCase(Locale.ROOT).replace('_', '-'));
+        }
         String partial = args.length == 0 ? "" : args[args.length - 1].toLowerCase(Locale.ROOT);
         return options.stream().filter(option -> option.toLowerCase(Locale.ROOT).startsWith(partial)).sorted().toList();
     }

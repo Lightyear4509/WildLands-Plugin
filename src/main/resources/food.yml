@@ -1,0 +1,4 @@
+schema-version: 1
+# Bonus saturation after eating preserved cooked food, capped at current hunger.
+# No spoilage timers; ordinary food remains viable.
+preserved-saturation: 1.0

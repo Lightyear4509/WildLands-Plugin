@@ -111,3 +111,17 @@ Parity is assumed by design per the user's revised workflow. Final acceptance mu
 | UUID homes and entity persistence | SQLite home plus chunk-persistent animal | Same server UUID/entity state | Automated registry restart, unload/removal and failed-write death tests pass; actual same-UUID/home/health restart, disable/re-enable adoption and death cleanup pass |
 
 Final acceptance must encounter a warning on both editions, back away without damage, test close engagement, armor, fire and three-player deterrence, bounded pursuit, night hunting and module toggles. No wildlife behavior is marked live-client tested. Jaguar appearance intentionally uses a vanilla ocelot equivalent; no Java-only model is introduced.
+
+## Milestone 7 — implemented; live checks deferred
+
+| Feature | Java | Bedrock through Geyser/Floodgate | Tested |
+| --- | --- | --- | --- |
+| Equipment recipes and upgrades | Native crafting table/recipe book | Same server recipes and vanilla items | Automated configuration/permission checks; all eleven native crafting/refill recipe matches pass; client recipe-book controls deferred |
+| Rain collector and basic/improved filters | Barrel inventory with tagged water potions | Same translated barrel and potion interface | Automated conservation/full-inventory/salt tests and native server station operations pass; client interactions deferred |
+| Cooking rack, kiln, boiler and improved stove | Native furnace/smoker recipes and fuel | Same native cooking and fuel | Native Paper water/food cooking checks pass; client interaction deferred |
+| Rain cloak | Dyed leather chestplate; server rain modifier | Same armor and wetness calculation | Automated rain-only protection and immersion/drying rules pass; client equipping/display deferred |
+| Three-drink waterskin and refill | Water potion consumption with native replacement | Equivalent translated potion consumption | Automated native replacement, disabled/loading safeguards and actual tags/refill recipe pass; client consumption/animation deferred |
+| Food preservation and nutrition | Native cooked food with modest saturation bonus | Same food consumption and server hunger | Automated after-consumption timing/capping and native preservation operations pass; client hunger display deferred |
+| Station/item persistence and toggles | Native item/chunk data | Same server data | Automated lifecycle cleanup; real restart/module-toggle checks recorded in docs/validation/milestone-7-server.md |
+
+Final combined-build acceptance must craft/place/open/break each station on both editions, exercise rain/roof collection, filter fresh versus salt water, boil/cook, preserve/eat food, equip a cloak in rain and immersion, drink all three waterskin charges and refill it. Check a full inventory, hoppers, recipe-book presentation, main-hand consumption at full hunger, module toggles and reconnect/restart. Parity is assumed by design under the user's revised workflow; none of these client checks is marked tested. Items and stations use vanilla visuals and interfaces, so separate custom assets or client mods are not required.

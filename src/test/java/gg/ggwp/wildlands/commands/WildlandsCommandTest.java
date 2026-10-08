@@ -33,7 +33,8 @@ class WildlandsCommandTest {
         when(plugin.configuration()).thenReturn(new ConfigurationManager.Snapshot(
                 new Settings("wildlands.db", 30, Map.of("player-records", true), debug),
                 Map.of("prefix", "[Custom] ", "no-permission", "Denied", "unknown-command", "Unknown"), mock(HydrationSettings.class),
-                mock(EnvironmentSettings.class), mock(SeasonSettings.class), mock(WorldgenSettings.class), mock(WildlifeSettings.class)));
+                mock(EnvironmentSettings.class), mock(SeasonSettings.class), mock(WorldgenSettings.class), mock(WildlifeSettings.class),
+                mock(CraftingSettings.class), mock(FoodSettings.class)));
     }
     void run(String... args) { assertTrue(handler.onCommand(sender, command, "wildlands", args)); }
     @Test void deniesReloadWithoutInvokingMutation() {
@@ -87,7 +88,7 @@ class WildlandsCommandTest {
     @Test void completionHidesUnauthorizedCommandsAndInvisiblePlayers() {
         assertTrue(handler.onTabComplete(sender, command, "wildlands", new String[]{""}).isEmpty());
         when(sender.hasPermission("ggwpwildlands.use")).thenReturn(true);
-        assertEquals(List.of("help", "hud", "status"), handler.onTabComplete(sender, command, "wildlands", new String[]{""}));
+        assertEquals(List.of("crafting", "help", "hud", "status"), handler.onTabComplete(sender, command, "wildlands", new String[]{""}));
         var viewer = mock(Player.class);
         var visible = mock(Player.class);
         var hidden = mock(Player.class);

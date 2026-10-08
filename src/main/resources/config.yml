@@ -12,5 +12,7 @@ modules:
   seasons: true
   worldgen: true
   wildlife: true
+  crafting: true
+  nutrition: true
 debug:
   enabled: true

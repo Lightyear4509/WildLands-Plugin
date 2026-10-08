@@ -27,6 +27,7 @@ public final class WildlandsPlugin extends JavaPlugin {
     private java.util.List<gg.ggwp.wildlands.storage.WorldRecord> savedWorlds;
     private java.util.List<gg.ggwp.wildlands.storage.WildlifeRecord> savedWildlife;
     private gg.ggwp.wildlands.wildlife.WildlifeManager wildlife;
+    private gg.ggwp.wildlands.items.CustomItemManager crafting;
     private CrossplayService crossplay;
     private boolean reloading;
     private final gg.ggwp.wildlands.survival.CauldronWater cauldronWater = new gg.ggwp.wildlands.survival.CauldronWater();
@@ -82,6 +83,9 @@ public final class WildlandsPlugin extends JavaPlugin {
                 modules.register(environment.temperatureModule());
                 modules.register(environment.wetnessModule());
                 modules.register(shelter);
+                crafting = new gg.ggwp.wildlands.items.CustomItemManager(this);
+                crafting.initialize(); modules.register(crafting);
+                modules.register(new gg.ggwp.wildlands.survival.NutritionService(this, crafting.items()));
                 modules.apply(loaded.settings().modules());
                 worlds.restore();
                 state = State.READY;
@@ -113,6 +117,8 @@ public final class WildlandsPlugin extends JavaPlugin {
                 if (candidate.wildlife().sampleTicks() != config.wildlife().sampleTicks()
                         || candidate.wildlife().spawnSeconds() != config.wildlife().spawnSeconds())
                     throw new IllegalArgumentException("Wildlife scheduling changes require a server restart; no settings changed");
+                if (candidate.crafting().sampleSeconds() != config.crafting().sampleSeconds())
+                    throw new IllegalArgumentException("Crafting interval changes require a server restart; no settings changed");
                 var previous = config;
                 config = candidate;
                 try {
@@ -157,6 +163,7 @@ public final class WildlandsPlugin extends JavaPlugin {
     public gg.ggwp.wildlands.seasons.SeasonManager seasons() { return seasons; }
     public gg.ggwp.wildlands.world.WorldManager worlds() { return worlds; }
     public gg.ggwp.wildlands.wildlife.WildlifeManager wildlife() { return wildlife; }
+    public gg.ggwp.wildlands.items.CustomItemManager crafting() { return crafting; }
     public gg.ggwp.wildlands.survival.ShelterService shelter() { return shelter; }
     public PlayerManager players() { return players; }
     public StorageService storage() { return storage; }
