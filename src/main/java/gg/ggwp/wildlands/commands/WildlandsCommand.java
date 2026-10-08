@@ -37,6 +37,8 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
                 say(sender, "Collect and treat water to maintain hydration.");
                 say(sender, "/wildlands crafting — survival equipment and station guide");
                 if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin crafting info | crafting give <player> <item>");
+                say(sender, "/landmarks [page] | /landmark <name|camp> | /wildlands navigate <name|camp|off> | camp [set|info] | expedition");
+                if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin landmarks list [world] | landmarks debug <player-uuid>");
             }
             case "status" -> {
                 if (!permitted(sender, USE)) return true;
@@ -52,6 +54,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
             }
             case "hud" -> new HydrationCommand(plugin).hud(sender, args);
             case "crafting" -> { if (permitted(sender, USE)) new CraftingCommand(plugin).guide(sender); }
+            case "landmarks", "landmark", "navigate", "camp", "expedition" -> new ExplorationCommand(plugin).player(sender, args);
             case "reload" -> {
                 if (permitted(sender, ADMIN)) {
                     if (args.length != 1) say(sender, "Usage: /wildlands reload");
@@ -70,6 +73,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         }
         switch (args[1].toLowerCase(Locale.ROOT)) {
             case "crafting" -> new CraftingCommand(plugin).admin(sender, args);
+            case "landmarks" -> new ExplorationCommand(plugin).admin(sender, args);
             case "wildlife" -> new WildlifeCommand(plugin).admin(sender, args);
             case "world" -> new WorldCommand(plugin).admin(sender, args);
             case "season" -> new SeasonCommand(plugin).admin(sender, args);
@@ -127,13 +131,13 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         if (plugin.state() != WildlandsPlugin.State.READY) return List.of();
         List<String> options = new ArrayList<>();
         if (args.length == 1) {
-            if (sender.hasPermission(USE)) options.addAll(List.of("help", "status", "hud", "crafting"));
+            if (sender.hasPermission(USE)) options.addAll(List.of("help", "status", "hud", "crafting", "landmarks", "landmark", "navigate", "camp", "expedition"));
             if (sender.hasPermission(ADMIN)) options.add("reload");
             if (sender.hasPermission(ADMIN) || sender.hasPermission(DEBUG)) options.add("admin");
         } else if (args.length == 2 && args[0].equalsIgnoreCase("hud") && sender.hasPermission(USE)) {
             options.addAll(List.of("on", "off"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
-            if (sender.hasPermission(ADMIN)) options.addAll(List.of("modules", "hydration", "temperature", "season", "world", "wildlife", "crafting"));
+            if (sender.hasPermission(ADMIN)) options.addAll(List.of("modules", "hydration", "temperature", "season", "world", "wildlife", "crafting", "landmarks"));
             if (sender.hasPermission(DEBUG)) options.add("debug");
         } else if (args.length == 3 && args[0].equalsIgnoreCase("admin")
                 && ((args[1].equalsIgnoreCase("debug") && sender.hasPermission(DEBUG))
@@ -158,6 +162,14 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
             if (args.length == 5 && args[2].equalsIgnoreCase("give")) for (var kind : gg.ggwp.wildlands.items.SurvivalItems.Kind.values())
                 options.add(kind.name().toLowerCase(Locale.ROOT).replace('_', '-'));
         }
+        if (args.length == 2 && sender.hasPermission(USE)) {
+            if (args[0].equalsIgnoreCase("camp")) options.addAll(List.of("set", "info"));
+            if (args[0].equalsIgnoreCase("navigate")) options.add("off");
+            if ((args[0].equalsIgnoreCase("navigate") || args[0].equalsIgnoreCase("landmark")) && sender instanceof Player player && plugin.landmarks() != null)
+                plugin.landmarks().journal(player.getUniqueId()).stream().limit(64).forEach(record -> options.add(record.name()));
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("landmarks") && sender.hasPermission(ADMIN))
+            options.addAll(List.of("list", "debug"));
         String partial = args.length == 0 ? "" : args[args.length - 1].toLowerCase(Locale.ROOT);
         return options.stream().filter(option -> option.toLowerCase(Locale.ROOT).startsWith(partial)).sorted().toList();
     }

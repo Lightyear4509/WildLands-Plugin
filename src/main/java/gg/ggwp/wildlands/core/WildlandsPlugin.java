@@ -28,6 +28,8 @@ public final class WildlandsPlugin extends JavaPlugin {
     private java.util.List<gg.ggwp.wildlands.storage.WildlifeRecord> savedWildlife;
     private gg.ggwp.wildlands.wildlife.WildlifeManager wildlife;
     private gg.ggwp.wildlands.items.CustomItemManager crafting;
+    private gg.ggwp.wildlands.world.LandmarkManager landmarks;
+    private java.util.List<gg.ggwp.wildlands.storage.LandmarkRecord> savedLandmarks;
     private CrossplayService crossplay;
     private boolean reloading;
     private final gg.ggwp.wildlands.survival.CauldronWater cauldronWater = new gg.ggwp.wildlands.survival.CauldronWater();
@@ -51,11 +53,17 @@ public final class WildlandsPlugin extends JavaPlugin {
         var seasonHandler = new gg.ggwp.wildlands.commands.SeasonCommand(this);
         var seasonCommand = Objects.requireNonNull(getCommand("season"));
         seasonCommand.setExecutor(seasonHandler); seasonCommand.setTabCompleter(seasonHandler);
+        var explorationHandler = new gg.ggwp.wildlands.commands.ExplorationCommand(this);
+        for (String name : new String[]{"landmark", "landmarks"}) {
+            var explorationCommand = Objects.requireNonNull(getCommand(name));
+            explorationCommand.setExecutor(explorationHandler); explorationCommand.setTabCompleter(explorationHandler);
+        }
         storage.submit(() -> {
             var loaded = configuration.load();
             storage.open(getDataFolder().toPath().resolve(loaded.settings().databaseFile()));
             savedWorlds = storage.worlds();
             savedWildlife = storage.wildlife();
+            savedLandmarks = storage.landmarks();
             for (var world : savedWorlds) if (world.uuid() != null) {
                 var metadata = gg.ggwp.wildlands.world.WorldPaths.dimension(levelDirectory, world.name()).resolve("data/paper/metadata.dat");
                 if (!java.nio.file.Files.isRegularFile(metadata))
@@ -86,6 +94,8 @@ public final class WildlandsPlugin extends JavaPlugin {
                 crafting = new gg.ggwp.wildlands.items.CustomItemManager(this);
                 crafting.initialize(); modules.register(crafting);
                 modules.register(new gg.ggwp.wildlands.survival.NutritionService(this, crafting.items()));
+                landmarks = new gg.ggwp.wildlands.world.LandmarkManager(this, storage, savedLandmarks);
+                modules.register(landmarks);
                 modules.apply(loaded.settings().modules());
                 worlds.restore();
                 state = State.READY;
@@ -119,6 +129,8 @@ public final class WildlandsPlugin extends JavaPlugin {
                     throw new IllegalArgumentException("Wildlife scheduling changes require a server restart; no settings changed");
                 if (candidate.crafting().sampleSeconds() != config.crafting().sampleSeconds())
                     throw new IllegalArgumentException("Crafting interval changes require a server restart; no settings changed");
+                if (candidate.landmarks().sampleSeconds() != config.landmarks().sampleSeconds())
+                    throw new IllegalArgumentException("Discovery sampling changes require a server restart; no settings changed");
                 var previous = config;
                 config = candidate;
                 try {
@@ -164,6 +176,7 @@ public final class WildlandsPlugin extends JavaPlugin {
     public gg.ggwp.wildlands.world.WorldManager worlds() { return worlds; }
     public gg.ggwp.wildlands.wildlife.WildlifeManager wildlife() { return wildlife; }
     public gg.ggwp.wildlands.items.CustomItemManager crafting() { return crafting; }
+    public gg.ggwp.wildlands.world.LandmarkManager landmarks() { return landmarks; }
     public gg.ggwp.wildlands.survival.ShelterService shelter() { return shelter; }
     public PlayerManager players() { return players; }
     public StorageService storage() { return storage; }

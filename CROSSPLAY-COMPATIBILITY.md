@@ -98,7 +98,7 @@ At final acceptance, run `/season info` on both clients, inspect the season HUD,
 | Caves and ores | Server cave tunnels and normal mineable ore blocks | Same tunnels and resources | Automated terrain/cave model and generation tests; live mining deferred |
 | World creation, region status and restart profiles | Permission-gated server command and frozen SQLite profiles | Same commands, UUID and shared world | Automated permissions, profile persistence and failed-write recovery tests; real creation, safe-name/existing-world refusal, restart UUID preservation and restoration with creation disabled pass; live region chat deferred |
 
-Parity is assumed by design per the user's revised workflow. Final acceptance must visit representative regions, cross chunk boundaries, mine caves/ores, inspect crowns/bamboo and waterfalls, and compare region status on both clients. Resource packs and client mods are not required. Vanilla structures are not generated in custom worlds; ruins and discovery mechanics arrive in Milestone 8.
+Parity is assumed by design per the user's revised workflow. Final acceptance must visit representative regions, cross chunk boundaries, mine caves/ores, inspect crowns/bamboo and waterfalls, and compare region status on both clients. Resource packs and client mods are not required. Vanilla structures are not generated in custom worlds; Milestone 8 adds custom ruins to new generator-version-2 worlds.
 
 ## Milestone 6 — implemented; live checks deferred
 
@@ -125,3 +125,15 @@ Final acceptance must encounter a warning on both editions, back away without da
 | Station/item persistence and toggles | Native item/chunk data | Same server data | Automated lifecycle cleanup; real restart/module-toggle checks recorded in docs/validation/milestone-7-server.md |
 
 Final combined-build acceptance must craft/place/open/break each station on both editions, exercise rain/roof collection, filter fresh versus salt water, boil/cook, preserve/eat food, equip a cloak in rain and immersion, drink all three waterskin charges and refill it. Check a full inventory, hoppers, recipe-book presentation, main-hand consumption at full hunger, module toggles and reconnect/restart. Parity is assumed by design under the user's revised workflow; none of these client checks is marked tested. Items and stations use vanilla visuals and interfaces, so separate custom assets or client mods are not required.
+
+## Milestone 8 — implemented; live checks deferred
+
+| Feature | Java | Bedrock through Geyser/Floodgate | Tested |
+| --- | --- | --- | --- |
+| Natural landmarks and ruins | Vanilla terrain and mossy stone ruins | Same translated blocks and shared world | Deterministic/clipping tests; native Paper ruins and stable restart identity pass; visual navigation deferred |
+| Discoveries and journal | UUID-keyed chat journal | Same journal keyed by Floodgate UUID | Automated multiplayer isolation, pagination/permissions and native synthetic UUID restart checks; live announcements deferred |
+| Navigation and compass | Bearing/distance action bar and native lodestone compass | Equivalent translated action bar and compass | Automated known-target/ownership guards; native compass metadata serialization; client needle/display deferred |
+| Private camps and expeditions | Physical shelter validation, personal waypoint, cosmetic ranks | Same server shelter and journey rules | Automated relocation, departure/return/rank checks; native owner isolation and active/completed persistence; physical client journeys deferred |
+| Module controls and persistence | Independent landmarks flag, batched schema-7 SQLite data | Same server state | Migration, failed-write recovery and real reload/restart tests pass |
+
+Final acceptance must discover a natural landmark and ruin, review the journal, navigate with a held compass, create/relocate a sheltered camp, travel out and return, and test two simultaneous players with different private camps and discoveries. Check targets across worlds, HUD toggles, reconnect/restart and module disable/re-enable. No client test is marked passed. All visuals are vanilla equivalents; no custom resource pack or client mod is required.

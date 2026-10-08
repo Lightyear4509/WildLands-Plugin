@@ -1,0 +1,11 @@
+schema-version: 1
+sample-seconds: 2
+batch-size: 32
+discovery-radius: 24
+vertical-range: 12
+max-natural-per-world: 4096
+# Affects Wildlands journal/navigation messages only; vanilla coordinates remain available.
+show-coordinates: true
+expedition:
+  depart-distance: 256
+  return-distance: 32

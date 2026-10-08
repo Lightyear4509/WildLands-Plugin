@@ -45,6 +45,7 @@ public final class HudManager implements WildlandsModule {
         });
         if (plugin.seasons() != null) plugin.seasons().state(player.getWorld())
                 .ifPresent(state -> fields.add("Season " + state.season().name().toLowerCase(java.util.Locale.ROOT).replace('_', ' ')));
+        if (plugin.landmarks() != null) plugin.landmarks().navigation(player).ifPresent(route -> fields.add("Route " + route));
         return String.join(" | ", fields);
     }
 }

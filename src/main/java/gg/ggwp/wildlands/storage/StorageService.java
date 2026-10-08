@@ -21,6 +21,11 @@ public final class StorageService {
     private final SeasonRepository seasonRepository = new SeasonRepository(database);
     private final WorldRepository worldRepository = new WorldRepository(database);
     private final WildlifeRepository wildlifeRepository = new WildlifeRepository(database);
+    private final ExplorationRepository explorationRepository = new ExplorationRepository(database);
+    private final Map<UUID, LandmarkRecord> pendingLandmarks = new LinkedHashMap<>();
+    private final Map<DiscoveryRecord.Key, DiscoveryRecord> pendingDiscoveries = new LinkedHashMap<>();
+    private final Map<UUID, ExpeditionRecord> pendingExpeditions = new LinkedHashMap<>();
+    private boolean explorationWriteFailed;
     private final Map<UUID, WildlifeRecord> pendingWildlife = new LinkedHashMap<>();
     private final Map<String, WorldRecord> pendingWorldIdentities = new LinkedHashMap<>();
     private final Map<UUID, SeasonRecord> pendingSeasons = new LinkedHashMap<>();
@@ -95,8 +100,9 @@ public final class StorageService {
     }
 
     private void refreshDiagnostics() {
-        pendingCount = pending.size() + pendingHydration.size() + pendingEnvironment.size() + pendingSeasons.size() + pendingWorldIdentities.size() + pendingWildlife.size();
-        health = playerWriteFailed || hydrationWriteFailed || environmentWriteFailed || seasonWriteFailed || worldWriteFailed || wildlifeWriteFailed ? "WRITE_FAILED" : "OK";
+        pendingCount = pending.size() + pendingHydration.size() + pendingEnvironment.size() + pendingSeasons.size() + pendingWorldIdentities.size() + pendingWildlife.size()
+                + pendingLandmarks.size() + pendingDiscoveries.size() + pendingExpeditions.size();
+        health = playerWriteFailed || hydrationWriteFailed || environmentWriteFailed || seasonWriteFailed || worldWriteFailed || wildlifeWriteFailed || explorationWriteFailed ? "WRITE_FAILED" : "OK";
     }
 
     public Optional<SeasonRecord> findSeason(UUID worldUuid) throws Exception {
@@ -115,6 +121,27 @@ public final class StorageService {
     }
 
     public String health() { return health; }
+    public List<LandmarkRecord> landmarks() throws Exception { return explorationRepository.landmarks(); }
+    public Optional<ExpeditionRecord> findExpedition(UUID id) throws Exception {
+        var pending = pendingExpeditions.get(id); return pending == null ? explorationRepository.player(id) : Optional.of(pending);
+    }
+    public Map<UUID, Long> findDiscoveries(UUID id) throws Exception {
+        var result = new LinkedHashMap<>(explorationRepository.discoveries(id));
+        for (var record : pendingDiscoveries.values()) if (record.player().equals(id)) result.merge(record.landmark(), record.firstSeen(), Math::min);
+        return Map.copyOf(result);
+    }
+    public void saveExploration(Collection<LandmarkRecord> landmarks, Collection<DiscoveryRecord> discoveries,
+                                Collection<ExpeditionRecord> players) throws Exception {
+        for (var record : landmarks) pendingLandmarks.put(record.id(), record);
+        for (var record : discoveries) pendingDiscoveries.merge(record.key(), record, (a, b) -> a.firstSeen() <= b.firstSeen() ? a : b);
+        for (var record : players) pendingExpeditions.put(record.player(), record);
+        refreshDiagnostics();
+        try {
+            explorationRepository.saveBatch(pendingLandmarks.values(), pendingDiscoveries.values(), pendingExpeditions.values());
+            if (!pendingLandmarks.isEmpty() || !pendingDiscoveries.isEmpty() || !pendingExpeditions.isEmpty()) lastSuccessfulSave = System.currentTimeMillis();
+            pendingLandmarks.clear(); pendingDiscoveries.clear(); pendingExpeditions.clear(); explorationWriteFailed = false; refreshDiagnostics();
+        } catch (Exception failure) { explorationWriteFailed = true; refreshDiagnostics(); throw failure; }
+    }
     public List<WildlifeRecord> wildlife() throws Exception { return wildlifeRepository.living(); }
     public void saveWildlife(Collection<WildlifeRecord> records) throws Exception {
         for (var record : records) pendingWildlife.put(record.uuid(), record);
@@ -160,6 +187,8 @@ public final class StorageService {
                 catch (Exception failure) { logger.log(Level.SEVERE, "Final world identity flush failed", failure); }
                 try { saveWildlife(List.of()); }
                 catch (Exception failure) { logger.log(Level.SEVERE, "Final wildlife flush failed", failure); }
+                try { saveExploration(List.of(), List.of(), List.of()); }
+                catch (Exception failure) { logger.log(Level.SEVERE, "Final exploration flush failed", failure); }
                 finally {
                     try { database.close(); }
                     catch (Exception failure) { logger.log(Level.SEVERE, "Database close failed", failure); }

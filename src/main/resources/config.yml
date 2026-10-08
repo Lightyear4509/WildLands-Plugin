@@ -14,5 +14,6 @@ modules:
   wildlife: true
   crafting: true
   nutrition: true
+  landmarks: true
 debug:
   enabled: true

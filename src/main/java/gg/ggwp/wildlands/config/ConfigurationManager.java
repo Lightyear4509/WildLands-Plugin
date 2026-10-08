@@ -10,8 +10,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 public final class ConfigurationManager {
     public record Snapshot(Settings settings, Map<String, String> messages, HydrationSettings hydration,
                            EnvironmentSettings environment, SeasonSettings seasons, WorldgenSettings worldgen, WildlifeSettings wildlife,
-                           CraftingSettings crafting, FoodSettings food) {
-        public Snapshot { messages = Map.copyOf(messages); java.util.Objects.requireNonNull(hydration); java.util.Objects.requireNonNull(environment); java.util.Objects.requireNonNull(seasons); java.util.Objects.requireNonNull(worldgen); java.util.Objects.requireNonNull(wildlife); java.util.Objects.requireNonNull(crafting); java.util.Objects.requireNonNull(food); }
+                           CraftingSettings crafting, FoodSettings food, LandmarkSettings landmarks) {
+        public Snapshot { messages = Map.copyOf(messages); java.util.Objects.requireNonNull(hydration); java.util.Objects.requireNonNull(environment); java.util.Objects.requireNonNull(seasons); java.util.Objects.requireNonNull(worldgen); java.util.Objects.requireNonNull(wildlife); java.util.Objects.requireNonNull(crafting); java.util.Objects.requireNonNull(food); java.util.Objects.requireNonNull(landmarks); }
         public String message(String key) { return messages.get("prefix") + messages.get(key); }
     }
     private final Path directory;
@@ -32,7 +32,7 @@ public final class ConfigurationManager {
         }
         return new Snapshot(Settings.parse(config), values, HydrationSettings.parse(read("hydration.yml")),
                 EnvironmentSettings.parse(read("environment.yml")), SeasonSettings.parse(read("seasons.yml")), WorldgenSettings.parse(read("worldgen.yml")), WildlifeSettings.parse(read("wildlife.yml")),
-                CraftingSettings.parse(read("crafting.yml")), FoodSettings.parse(read("food.yml")));
+                CraftingSettings.parse(read("crafting.yml")), FoodSettings.parse(read("food.yml")), LandmarkSettings.parse(read("landmarks.yml")));
     }
 
     private YamlConfiguration read(String name) throws IOException, InvalidConfigurationException {

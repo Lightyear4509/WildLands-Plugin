@@ -1,5 +1,5 @@
 schema-version: 1
-generator-version: 1
+generator-version: 2
 # Applies only to NEW rainforest worlds. Existing worlds keep their frozen profile.
 sea-level: 63
 tree-density: 0.80

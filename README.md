@@ -1,6 +1,6 @@
 # GGWP Wildlands
 
-Server-authoritative rainforest survival project. **Milestones 1–7 are implemented.** Hydration adds drinking, water quality, campfire boiling and an optional action-bar HUD. Environment adds temperature, wetness, shade, campfire warmth and shelter status. Seasons add per-world clocks, weather, temperature and natural crop-growth modifiers. World generation adds deterministic rainforest regions, waterways, canopy, caves and mining resources. Wildlife adds territorial jaguars. Crafting adds camp equipment, water filtration, portable supplies and food preservation. Further live checks are deferred to the combined build at the user's request; actual test status is recorded in CROSSPLAY-COMPATIBILITY.md.
+Server-authoritative rainforest survival project. **Milestones 1–8 are implemented.** Hydration adds drinking, water quality, campfire boiling and an optional action-bar HUD. Environment adds temperature, wetness, shade, campfire warmth and shelter status. Seasons add per-world clocks, weather, temperature and natural crop-growth modifiers. World generation adds deterministic rainforest regions, waterways, canopy, caves and mining resources. Wildlife adds territorial jaguars. Crafting adds camp equipment, water filtration, portable supplies and food preservation. Exploration adds ruins, saved discoveries, camp waypoints, compass routes and expedition records. Further live checks are deferred to the combined build at the user's request; actual test status is recorded in CROSSPLAY-COMPATIBILITY.md.
 
 ## Requirements and build
 
@@ -20,7 +20,7 @@ Linux/macOS:
 sh ./gradlew clean build
 ```
 
-Install **`build/libs/GGWPWildlands-0.7.0.jar`**. The `-plain.jar` is a development artifact without SQLite; do not install it. Tests run during `build`; HTML results are in `build/reports/tests/test/index.html`. Milestones 8–9 remain; this is an intermediate build, not the final combined release.
+Install **`build/libs/GGWPWildlands-0.8.0.jar`**. The `-plain.jar` is a development artifact without SQLite; do not install it. Tests run during `build`; HTML results are in `build/reports/tests/test/index.html`. Milestone 9 remains; this is an intermediate build, not the final combined release.
 
 The build targets Java 25 bytecode and pins Paper API `26.2.build.121-stable`. SQLite is bundled in the distributable, including its native libraries and JDBC service descriptor. No runtime dependency download is required by Wildlands. The Gradle wrapper distribution is SHA-256 pinned, and dependency versions are locked in gradle.lockfile. SQLite uses Paper's provided SLF4J API rather than bundling a second logging API. Java 25 may warn about SQLite native-library access unless the server is launched with --enable-native-access=ALL-UNNAMED.
 
@@ -29,7 +29,7 @@ The build targets Java 25 bytecode and pins Paper API `26.2.build.121-stable`. S
 1. Install Java 25 and a Paper **26.2** server.
 2. Stop the server and copy the distributable into `plugins/`.
 3. Start the server. Look for **Foundation ready** in the log.
-4. Configure `plugins/GGWPWildlands/config.yml`, `messages.yml`, `hydration.yml`, `environment.yml`, `seasons.yml`, `worldgen.yml`, `wildlife.yml`, `crafting.yml`, and `food.yml`.
+4. Configure `plugins/GGWPWildlands/config.yml`, `messages.yml`, `hydration.yml`, `environment.yml`, `seasons.yml`, `worldgen.yml`, `wildlife.yml`, `crafting.yml`, `food.yml`, and `landmarks.yml`.
 5. Run `wildlands admin debug` from the server console.
 
 Geyser-Spigot and Floodgate are optional. Install/configure their official server plugins to support Bedrock connections. Wildlands requires no client mod or resource pack. Do not install the plain and shaded JARs together. Use a full server restart for plugin updates; Bukkit/server hot reload is unsupported.
@@ -51,7 +51,7 @@ The use permission defaults to everyone; both admin permissions default to opera
 
 Status shows an online player's server UUID, detected platform, and record loading state. Console status reports plugin readiness. Diagnostics show server/plugin/Java versions, storage health, queued work, pending writes, last successful save, module states, and crossplay provider availability. They do not expose Floodgate keys, XUIDs, tokens, or IP addresses.
 
-Use `/hydration` to inspect hydration, `/wildlands hud on|off` to save your HUD preference, and `/wildlands admin hydration <online-player|uuid> <0..100>` for permission-gated administration. The HUD/status commands use `ggwpwildlands.use`; the admin setter uses `ggwpwildlands.admin` and supports console. `/season [info [world]]` uses the use permission; `/wildlands admin season <season> [world]` uses the admin permission. Landmarks are not registered yet.
+Use `/hydration` to inspect hydration, `/wildlands hud on|off` to save your HUD preference, and `/wildlands admin hydration <online-player|uuid> <0..100>` for permission-gated administration. The HUD/status commands use `ggwpwildlands.use`; the admin setter uses `ggwpwildlands.admin` and supports console. `/season [info [world]]` uses the use permission; `/wildlands admin season <season> [world]` uses the admin permission. Exploration commands are described below.
 
 ## Configuration and modules
 
@@ -74,6 +74,7 @@ modules:
   wildlife: true
   crafting: true
   nutrition: true
+  landmarks: true
 debug:
   enabled: true
 ```
@@ -116,6 +117,29 @@ Station identity uses native TileState persistent data; inventories and item tag
 
 Operators/console can inspect `/wildlands admin crafting info` or give one item with `/wildlands admin crafting give <exact-online-player> <item>`; tab completion lists item identifiers. Giving to a full inventory is refused. Recipes do not gate or remove ordinary vanilla progression. No mod or resource pack is required. See `MILESTONE-7-REVIEW.md` and the crossplay matrix for verification and deferred client checks.
 
+## Exploration (Milestone 8)
+
+Enable `landmarks` in `config.yml` on existing installs. `landmarks.yml` controls bounded player sampling, discovery distance, landmark caps, expedition departure/return distances and coordinate display. Natural rainforest landmarks are registered when their chunks load; nearby players discover them automatically. The journal records first discovery times against server UUIDs, including Floodgate UUIDs. Undiscovered waypoints are not revealed to players.
+
+| Command | Use |
+| --- | --- |
+| `/landmarks [page]` or `/wildlands landmarks [page]` | Review your discoveries and personal camp, twenty waypoints per page |
+| `/landmark <name|uuid|camp>` | Inspect a known waypoint, direction and horizontal distance |
+| `/wildlands navigate <name|uuid|camp>` | Track the route in the HUD; a compass held in your main hand is pointed at the waypoint |
+| `/wildlands navigate off` | Stop the HUD route and reset a held Wildlands compass |
+| `/wildlands camp [set|info]` | Save one personal camp waypoint while standing on dry ground under a roof near a lit campfire; another set replaces it |
+| `/wildlands expedition` | Review trail knowledge, longest distance from camp, active/completed expeditions and preparation advice |
+| `/wildlands admin landmarks list [world]` | Console-compatible registry diagnostics, capped at twenty results |
+| `/wildlands admin landmarks debug <player-uuid>` | Inspect persisted exploration state by UUID |
+
+Player commands require `ggwpwildlands.use`; administration requires `ggwpwildlands.admin`. Camp waypoints are private to their owner. Hold a normal compass in the main hand when setting a route: its native lodestone target works without building a lodestone. The compass stores that waypoint at the time of setting; rerun navigation while holding it after relocating camp, or to update another compass. Neither navigation nor reviewing discoveries teleports players or loads destination chunks. Different-world routes ask you to travel to that world first. Ordinary maps and coordinates remain available. `show-coordinates: false` hides only Wildlands' waypoint-coordinate messages, not vanilla coordinates.
+
+At defaults, leaving 256 blocks from a saved camp starts an expedition; returning within 32 blocks records its completion. Farthest distance is straight-line horizontal distance from camp, not a simulated walking odometer. Reconnects preserve the active trip. Discovery and expedition experience grant cosmetic trail ranks (Novice, Scout, Explorer, Pathfinder), with no vanilla equipment or recipe locks, travel taxes or extra damage timers. One saved camp helps plan remote journeys; build additional physical shelters wherever useful.
+
+Generator profile **2** adds deterministic stone-brick ruins with walkable entrances in suitable dry terrain. Fresh `worldgen.yml` defaults to profile 2. Existing configuration files and registered worlds retain profile 1 until you choose profile 2 for a **new** world; already registered profiles never change. Existing worlds gain natural landmark discovery but no automatic ruin retrofits or edits to player builds. Ruins contain no respawning loot, traps, forced enemies or client-only blocks. Their chunk-buffer generation never reads neighboring chunks. Removing the landmarks module stops discovery/navigation/trip tracking; recorded data and generated structures remain. Sampling cadence changes require restart.
+
+SQLite schema 7 adds landmark, discovery and expedition tables, and transactionally preserves old world profiles while allowing profile 2. A spatial index in memory limits proximity checks to nearby cells; player work is batched. Database snapshots remain asynchronous and batched. Back up SQLite plus the shared world/player directories. See `MILESTONE-8-REVIEW.md` and the crossplay matrix for actual verification and deferred client acceptance.
+
 ## Architecture and persistence
 
 Packages separate `core`, `config`, `storage`, `commands`, and `crossplay`. `WildlandsModule` is the lifecycle extension point; `PlatformAdapter` isolates platform classification. Hydration and HUD are separate modules; survival rules are independent of crossplay detection.
@@ -124,7 +148,7 @@ The plugin registers commands immediately in a STARTING state, initializes files
 
 A single dedicated storage worker owns JDBC access. Server-thread listeners capture immutable UUID/name/time records, then enqueue database work. No Bukkit player or world access occurs on that worker. Online records are saved in batched transactions; joins and quits also queue saves. Failed batches remain in memory for retry on the next save. Failed player loads retry on that cadence without requiring reconnect; diagnostics distinguish LOADING from LOAD_FAILED. Shutdown queues a final flush and waits up to 20 seconds for the worker; errors or timeout are logged prominently. As with any buffered persistence system, a process crash can lose records not yet committed.
 
-SQLite uses prepared statements, WAL, a 5-second busy timeout, FULL synchronization, and schema versioning via `PRAGMA user_version`. Schema version 6 retains player, hydration, environment, seasonal and world records and adds wildlife UUIDs and territory homes. The migrations are transactional. Player timestamps are UTC epoch milliseconds. UPSERT preserves the earliest first-seen time and latest last-seen/name, preventing stale reconnect writes from regressing records. A newer schema is refused rather than downgraded.
+SQLite uses prepared statements, WAL, a 5-second busy timeout, FULL synchronization, and schema versioning via `PRAGMA user_version`. Schema version 7 retains player, hydration, environment, seasonal, world and wildlife records and adds landmarks, UUID discoveries and expedition state. The migrations are transactional. Player timestamps are UTC epoch milliseconds. UPSERT preserves the earliest first-seen time and latest last-seen/name, preventing stale reconnect writes from regressing records. A newer schema is refused rather than downgraded.
 
 Use a normal server shutdown before copying the database for backup. If copying a live database, use an SQLite-aware backup tool; copying only the `.db` file can omit committed WAL data. Never delete or replace the database to recover from a configuration error.
 

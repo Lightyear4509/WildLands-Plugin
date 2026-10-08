@@ -34,7 +34,7 @@ class EnvironmentRepositoryTest {
                 assertTrue(new EnvironmentRepository(database).find(id).isEmpty());
                 try (Statement statement = database.connection().createStatement();
                      ResultSet result = statement.executeQuery("PRAGMA user_version")) {
-                    assertEquals(6, result.getInt(1));
+                    assertEquals(7, result.getInt(1));
                 }
             }
         }

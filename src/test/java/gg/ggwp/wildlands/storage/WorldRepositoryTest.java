@@ -29,7 +29,7 @@ class WorldRepositoryTest {
         var profile = new WorldgenSettings(1, 63, .8, true, true);
         for (String name : new String[]{"../world", "world/child", "CON", "con", "", "with space", "MixedCase", "overworld", "the_nether", "the_end"})
             assertThrows(IllegalArgumentException.class, () -> new WorldRecord(name, null, 1, profile));
-        assertThrows(IllegalArgumentException.class, () -> new WorldgenSettings(2, 63, .8, true, true));
+        assertThrows(IllegalArgumentException.class, () -> new WorldgenSettings(3, 63, .8, true, true));
         assertThrows(IllegalArgumentException.class, () -> new WorldgenSettings(1, 63, Double.NaN, true, true));
     }
 }

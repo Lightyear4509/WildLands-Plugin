@@ -50,6 +50,8 @@ public final class WorldGenerator extends ChunkGenerator {
             if (column.submerged()) data.setRegion(x, column.groundY() + 1, z, x + 1, column.waterY() + 1, z + 1, Material.WATER);
         }
         decorate(info, terrain, chunkX, chunkZ, data);
+        if (settings.version() >= 2) LandmarkPlanner.inChunk(seed, settings, info.getMinHeight(), info.getMaxHeight(), chunkX, chunkZ)
+                .ifPresent(candidate -> StructureManager.ruin(seed, candidate, chunkX, chunkZ, data));
     }
     private static Material ore(long seed, int x, int y, int z) {
         // Coarse lattice clusters provide mineable veins, with independent fine noise for their edges.
@@ -71,6 +73,11 @@ public final class WorldGenerator extends ChunkGenerator {
             for (int gz = Math.floorDiv(originZ - 8, 9); gz <= Math.floorDiv(originZ + 23, 9); gz++) {
                 int tx = gx * 9 + (int) (TerrainNoise.unit(info.getSeed() + 401, gx, 0, gz) * 7);
                 int tz = gz * 9 + (int) (TerrainNoise.unit(info.getSeed() + 403, gx, 0, gz) * 7);
+                if (settings.version() >= 2) {
+                    var landmark = LandmarkPlanner.inChunk(info.getSeed(), settings, info.getMinHeight(), info.getMaxHeight(), Math.floorDiv(tx, 16), Math.floorDiv(tz, 16));
+                    if (landmark.isPresent() && landmark.get().kind() == LandmarkKind.RUINS
+                            && Math.abs(landmark.get().x() - tx) <= 6 && Math.abs(landmark.get().z() - tz) <= 6) continue;
+                }
                 var ground = terrain.column(tx, tz);
                 double density = settings.treeDensity() * switch (ground.region()) {
                     case DENSE_RAINFOREST -> 1.0;

@@ -5,7 +5,7 @@ import org.bukkit.configuration.ConfigurationSection;
 /** Generation settings are frozen for each world; changing them requires a new world. */
 public record WorldgenSettings(int version, int seaLevel, double treeDensity, boolean caves, boolean ores) {
     public WorldgenSettings {
-        if (version != 1 || seaLevel < 32 || seaLevel > 128 || !Double.isFinite(treeDensity)
+        if (version < 1 || version > 2 || seaLevel < 32 || seaLevel > 128 || !Double.isFinite(treeDensity)
                 || treeDensity < 0 || treeDensity > 1)
             throw new IllegalArgumentException("Invalid world generator settings");
     }
