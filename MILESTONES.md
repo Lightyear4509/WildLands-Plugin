@@ -1,6 +1,6 @@
 # Milestone execution and acceptance
 
-The current user goal is to complete all nine milestones from SPEC.md and commit every milestone. On October 7 the user revised the testing gate: defer further live Java/Bedrock checks, proceed through milestones with automated verification, and deliver one combined build for live testing at the end. The original Milestone 1-only request and per-milestone live-test gate are superseded by these instructions. Crossplay parity remains a design requirement; deferred tests are recorded as untested.
+The original nine-milestone implementation goal is complete, with one commit per milestone and a combined 0.9.0 build supplied. The repository is now connected to https://github.com/Lightyear4509/WildLands-Plugin and the milestone history is published on main. The user subsequently requested Milestone 10 planning: settlement infrastructure plus wildlife models, behaviors, AI and sounds. On October 7 the user revised the testing gate: defer further live Java/Bedrock checks, proceed through milestones with automated verification, and deliver one combined build for live testing at the end. The original Milestone 1-only request and per-milestone live-test gate are superseded by these instructions. Crossplay parity remains a design requirement; deferred tests are recorded as untested.
 
 | Milestone | Scope | Current state |
 | --- | --- | --- |
@@ -13,6 +13,7 @@ The current user goal is to complete all nine milestones from SPEC.md and commit
 | 7 | Survival crafting and camp/settlement equipment | Implemented and reviewed: clean build, 123 tests, native equipment/refill recipes, rain/filter/preservation/cooking, fuel modifier, module toggles and station restart persistence passed; live crossplay checks deferred |
 | 8 | Landmarks, ruins, discoveries, navigation, expeditions | Implemented and reviewed: clean build, 137 tests, native ruins/compass metadata, schema upgrade, module reload and isolated UUID/camp/expedition restart checks passed; live crossplay checks deferred |
 | 9 | Performance, balance, resource packs, multiplayer/crossplay polish, admin tools/docs | Implemented and reviewed: 147 automated tests, preserved terrain fingerprints, native optional-provider startup, distant-generation replay, module reload/restart and admin health checks; collective build/checklist supplied; live multiplayer/crossplay and extended load/balance checks deferred |
+| 10 | Settlement infrastructure and wildlife models, animations, behaviors, AI and sounds | Planned at the user's request; implementation not started. Proposed first roster: modeled Jaguar, Capybara and Tapir; prototype rendering parity first, then species expansion and shared settlement water/navigation |
 
 ## Gate for each milestone
 

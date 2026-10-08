@@ -149,3 +149,15 @@ Final acceptance must discover a natural landmark and ruin, review the journal, 
 | Health/admin tools and optional providers | Permission-gated console/chat diagnostics | Same commands and permissions | Automated denial/completion; actual complete candidate startup with providers absent and present, module controls and restart pass; final client denial check pending |
 
 The full 0.9.0 build passes 147 automated tests. Resource packs remain optional future presentation work: current native equivalents require none, and separate Java/Bedrock asset documentation is maintained. Per the user's instruction, parity is assumed for implementation progress; no deferred client result is called tested. Use docs/FINAL-TEST-CHECKLIST.md for one collective acceptance session and docs/OPERATIONS.md for limits, balance and recovery.
+
+## Milestone 10 — planned; not implemented or tested
+
+| Planned feature | Java | Bedrock through Geyser/Floodgate | Tested |
+| --- | --- | --- | --- |
+| Species models, textures and animations | Dedicated resource-pack presentation and server rendering adapter | Separate Bedrock assets/mappings and compatible rendering adapter | Not implemented; validate one Jaguar prototype before roster expansion |
+| Species AI, habitats and populations | Bounded authoritative server behavior | Identical server behavior and interaction rules | Not implemented |
+| Species sounds | Java pack sound identifiers and server cues | Equivalent Bedrock sound assets and translated cues | Not implemented |
+| Declined/unavailable pack fallback | Visible named vanilla equivalent | Visible named vanilla equivalent | Not implemented; preserve gameplay/hitboxes without client mods |
+| Shared settlements, water storage/treatment and navigation | UUID membership, native controls and server accounting | Same membership, controls and accounting | Not implemented |
+
+See docs/MILESTONE-10-PLAN.md. Custom visuals and sounds require resource-pack content; packs are separate from client mods. Geyser does not automatically convert Java packs or establish custom model parity. No particular rendering bridge has been selected or validated yet. The existing 0.9.0 build still requires no pack.

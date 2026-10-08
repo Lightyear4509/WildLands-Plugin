@@ -420,6 +420,51 @@ Optimize performance, balance systems, improve resource packs, fix
 Bedrock inconsistencies, conduct multiplayer testing, and improve admin
 tools/documentation.
 
+## Milestone 10 --- Settlement Infrastructure and Wildlife Expansion
+
+Added at the user's request after completion of Milestones 1–9. This is
+planned scope, not a claim that these features already exist.
+
+Settlement infrastructure:
+
+- Named shared settlements with UUID-based owners and members.
+- Shared camp waypoints and member navigation, retaining private camps.
+- Rain-fed water storage, charcoal-powered freshwater treatment and
+  clean-water dispensing, with conservation and duplication safeguards.
+- Optional infrastructure without land claims or artificial restrictions
+  on vanilla progression.
+
+Wildlife expansion:
+
+- Species-specific models, textures, animations, sounds and behavior.
+- Initial proposed roster: upgrade Jaguar presentation; add Capybara
+  and Tapir. Other rainforest species remain future expansion work.
+- Jaguar retains stalking, territorial warnings, bounded pursuit, prey
+  hunting and fire/group deterrence. Capybara emphasizes wetland groups,
+  swimming and avoidance; Tapir emphasizes forest foraging, rest and
+  retreat. Animals should feel ecological rather than like extra monsters.
+- Species configuration, habitat/population limits, UUID persistence,
+  bounded server-authoritative AI and administrator diagnostics.
+- Idle, movement, warning, hurt and death sounds as appropriate to each
+  species, with throttling so groups do not produce constant noise.
+- Shared gameplay/hitboxes across clients and separate Java/Bedrock
+  resource-pack assets and mappings for custom presentation. Resource
+  packs may be downloaded by clients; no client-side mod is permitted.
+- Validate a single modeled Jaguar prototype and its rendering adapters
+  before expanding the roster. Do not assume Java entity models or
+  display rendering translate automatically through Geyser. Any needed
+  server-side bridge must be identified and documented explicitly.
+- When custom presentation is unavailable or a pack is declined,
+  retain usable named vanilla equivalents with the same gameplay.
+
+Implement this milestone in stages, preserving the existing architecture.
+Maintain independent settlement/wildlife configuration and safe optional
+provider behavior. Test conservation, access control, AI transitions,
+population caps, animation/display cleanup, sound limits and restart
+persistence automatically and on a disposable server where practical.
+At the user's request, defer additional live Java/Bedrock checks to one
+collective milestone build; never record deferred client checks as passed.
+
 # Codex Development Rules
 
 1.  Read this entire specification before implementing a milestone.
