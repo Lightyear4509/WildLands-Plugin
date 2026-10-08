@@ -1,0 +1,15 @@
+# Milestone 6 server validation
+
+October 7, 2026: disposable Paper 26.2 build 121, Java 25.0.4.1, Wildlands 0.6.0, Geyser 2.11.3 build 1245 and Floodgate 2.2.5 build 140. The stopped schema-5 database, configuration and prior JAR were backed up in .runtime/milestone-6-backup. Wildlife was enabled only for rainforest_dev; automatic spawning was set to zero for controlled console checks.
+
+Startup completed at 20:14:18, preserving the rainforest world UUID. Wildlife diagnostics initially showed zero registered/loaded animals. A temporarily loaded spawn chunk allowed `/wildlands admin wildlife spawn rainforest_dev 0.5 65 0.5` at 20:15:20. Jaguar UUID: `7dce4de7-c809-4638-b9bc-4c59be7187a3`. Diagnostics reported one registered and one loaded animal, IDLE with the expected home. Actual entity data showed the Jaguar name, plugin ownership/home tags, persistent entity flag and Health 20.
+
+Spawning another animal in the same territory and at an unloaded distant location was refused. A lit campfire at (2,65,0) changed the jaguar's runtime state to RETREATING; the block was removed after inspection. This proves server deterrence state, not visual fleeing with a live client. Human warning, armor/combat, group deterrence, navigation and crossplay appearance remain deferred to final combined-build acceptance.
+
+Automated clean build passed 110 tests, including deterministic behavior limits, habitat cells, configuration/permissions, UUID home persistence, disabled attacks, unload-versus-removal handling, and failed registration/death-write retry without resurrection. Real persistence and prey checks continue below as evidence is collected.
+
+A controlled stationary chicken probe started at Health 100. At 20:21:41 it had Health 94 while jaguar diagnostics showed ATTACKING; at 20:21:45 it had Health 88. This matches two 3-damage bites over four seconds. Only the probe's health was raised; jaguar health remained the normal 20. Earlier four- and forty-health probes were killed by the hunt. These checks verify actual server prey damage, not human combat or client visuals.
+
+Reloading with wildlife disabled succeeded at 20:22:58. At 20:23:04 diagnostics showed disabled, one registered animal and zero loaded decision sessions. Probe animals and temporary chunk tickets were removed. Normal save/stop completed at 20:23:05; the jaguar was preserved for restart validation. The clean build, including border checks and reload adoption, was installed while stopped.
+
+The clean build restarted normally at 20:25:56. With wildlife still disabled, diagnostics retained one registered animal. After loading its chunk, the exact jaguar UUID returned Health 20 at 20:26:32. Re-enabling through configuration reload succeeded at 20:26:45; diagnostics at 20:26:50 showed that same UUID/home as a loaded IDLE session. The jaguar was then killed to verify actual population cleanup; diagnostics returned zero registered/loaded animals. Temporary tickets were removed and the second session stopped normally.

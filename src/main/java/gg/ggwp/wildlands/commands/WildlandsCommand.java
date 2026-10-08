@@ -33,6 +33,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
                 if (sender.hasPermission(DEBUG)) say(sender, "/wildlands admin debug [online-player|uuid]");
                 if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin season <season> [world]");
                 if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin world list | world create <new-name> <seed>");
+                if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin wildlife list | wildlife spawn <world> <x> <y> <z>");
                 say(sender, "Collect and treat water to maintain hydration.");
             }
             case "status" -> {
@@ -65,6 +66,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
             return;
         }
         switch (args[1].toLowerCase(Locale.ROOT)) {
+            case "wildlife" -> new WildlifeCommand(plugin).admin(sender, args);
             case "world" -> new WorldCommand(plugin).admin(sender, args);
             case "season" -> new SeasonCommand(plugin).admin(sender, args);
             case "hydration" -> new HydrationCommand(plugin).admin(sender, args);
@@ -127,7 +129,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         } else if (args.length == 2 && args[0].equalsIgnoreCase("hud") && sender.hasPermission(USE)) {
             options.addAll(List.of("on", "off"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
-            if (sender.hasPermission(ADMIN)) options.addAll(List.of("modules", "hydration", "temperature", "season", "world"));
+            if (sender.hasPermission(ADMIN)) options.addAll(List.of("modules", "hydration", "temperature", "season", "world", "wildlife"));
             if (sender.hasPermission(DEBUG)) options.add("debug");
         } else if (args.length == 3 && args[0].equalsIgnoreCase("admin")
                 && ((args[1].equalsIgnoreCase("debug") && sender.hasPermission(DEBUG))
@@ -141,6 +143,10 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
             plugin.getServer().getWorlds().forEach(world -> options.add(world.getName()));
         if (args.length == 3 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("world") && sender.hasPermission(ADMIN))
             options.addAll(List.of("list", "create"));
+        if (args.length == 3 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("wildlife") && sender.hasPermission(ADMIN))
+            options.addAll(List.of("list", "spawn"));
+        if (args.length == 4 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("wildlife") && sender.hasPermission(ADMIN))
+            plugin.getServer().getWorlds().forEach(world -> options.add(world.getName()));
         String partial = args.length == 0 ? "" : args[args.length - 1].toLowerCase(Locale.ROOT);
         return options.stream().filter(option -> option.toLowerCase(Locale.ROOT).startsWith(partial)).sorted().toList();
     }

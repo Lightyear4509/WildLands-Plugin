@@ -1,0 +1,24 @@
+schema-version: 1
+worlds: [wildlands]
+# Distributed work: process at most this many loaded animals per callback.
+sample-ticks: 10
+batch-size: 8
+spawn-seconds: 60
+max-per-world: 32
+max-loaded: 64
+spawn-chance: 0.15
+jaguar:
+  health: 20
+  damage: 3
+  bite-range: 2.2
+  bite-seconds: 2
+  fire-radius: 6
+  hunt-prey: true
+  detection-range: 20
+  warning-range: 8
+  engagement-range: 6
+  territory-radius: 40
+  warning-seconds: 5
+  chase-seconds: 20
+  retreat-seconds: 30
+  deterrent-group-size: 3

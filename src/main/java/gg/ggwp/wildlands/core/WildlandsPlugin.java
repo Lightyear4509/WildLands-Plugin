@@ -25,6 +25,8 @@ public final class WildlandsPlugin extends JavaPlugin {
     private gg.ggwp.wildlands.seasons.SeasonManager seasons;
     private gg.ggwp.wildlands.world.WorldManager worlds;
     private java.util.List<gg.ggwp.wildlands.storage.WorldRecord> savedWorlds;
+    private java.util.List<gg.ggwp.wildlands.storage.WildlifeRecord> savedWildlife;
+    private gg.ggwp.wildlands.wildlife.WildlifeManager wildlife;
     private CrossplayService crossplay;
     private boolean reloading;
     private final gg.ggwp.wildlands.survival.CauldronWater cauldronWater = new gg.ggwp.wildlands.survival.CauldronWater();
@@ -52,6 +54,7 @@ public final class WildlandsPlugin extends JavaPlugin {
             var loaded = configuration.load();
             storage.open(getDataFolder().toPath().resolve(loaded.settings().databaseFile()));
             savedWorlds = storage.worlds();
+            savedWildlife = storage.wildlife();
             for (var world : savedWorlds) if (world.uuid() != null) {
                 var metadata = gg.ggwp.wildlands.world.WorldPaths.dimension(levelDirectory, world.name()).resolve("data/paper/metadata.dat");
                 if (!java.nio.file.Files.isRegularFile(metadata))
@@ -64,6 +67,8 @@ public final class WildlandsPlugin extends JavaPlugin {
                 config = loaded;
                 worlds = new gg.ggwp.wildlands.world.WorldManager(this, storage, savedWorlds);
                 modules.register(worlds);
+                wildlife = new gg.ggwp.wildlands.wildlife.WildlifeManager(this, storage, savedWildlife);
+                wildlife.initialize(); modules.register(wildlife);
                 getServer().getPluginManager().registerEvents(cauldronWater, this);
                 players = new PlayerManager(this, storage, loaded.settings().saveIntervalSeconds());
                 modules.register(players);
@@ -105,6 +110,9 @@ public final class WildlandsPlugin extends JavaPlugin {
                     throw new IllegalArgumentException("Environment sampling interval changes require a server restart; no settings changed");
                 if (candidate.seasons().clockSeconds() != config.seasons().clockSeconds())
                     throw new IllegalArgumentException("Season clock interval changes require a server restart; no settings changed");
+                if (candidate.wildlife().sampleTicks() != config.wildlife().sampleTicks()
+                        || candidate.wildlife().spawnSeconds() != config.wildlife().spawnSeconds())
+                    throw new IllegalArgumentException("Wildlife scheduling changes require a server restart; no settings changed");
                 var previous = config;
                 config = candidate;
                 try {
@@ -114,6 +122,7 @@ public final class WildlandsPlugin extends JavaPlugin {
                     throw error;
                 }
                 crossplay.refresh();
+                wildlife.configurationChanged();
                 reply.accept("Configuration reloaded.");
             } catch (Exception error) {
                 report("Configuration reload rejected; previous configuration retained", error);
@@ -147,6 +156,7 @@ public final class WildlandsPlugin extends JavaPlugin {
     public gg.ggwp.wildlands.survival.EnvironmentService environment() { return environment; }
     public gg.ggwp.wildlands.seasons.SeasonManager seasons() { return seasons; }
     public gg.ggwp.wildlands.world.WorldManager worlds() { return worlds; }
+    public gg.ggwp.wildlands.wildlife.WildlifeManager wildlife() { return wildlife; }
     public gg.ggwp.wildlands.survival.ShelterService shelter() { return shelter; }
     public PlayerManager players() { return players; }
     public StorageService storage() { return storage; }

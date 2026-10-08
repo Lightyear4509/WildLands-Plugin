@@ -99,3 +99,15 @@ At final acceptance, run `/season info` on both clients, inspect the season HUD,
 | World creation, region status and restart profiles | Permission-gated server command and frozen SQLite profiles | Same commands, UUID and shared world | Automated permissions, profile persistence and failed-write recovery tests; real creation, safe-name/existing-world refusal, restart UUID preservation and restoration with creation disabled pass; live region chat deferred |
 
 Parity is assumed by design per the user's revised workflow. Final acceptance must visit representative regions, cross chunk boundaries, mine caves/ores, inspect crowns/bamboo and waterfalls, and compare region status on both clients. Resource packs and client mods are not required. Vanilla structures are not generated in custom worlds; ruins and discovery mechanics arrive in Milestone 8.
+
+## Milestone 6 — implemented; live checks deferred
+
+| Feature | Java | Bedrock through Geyser/Floodgate | Tested |
+| --- | --- | --- | --- |
+| Jaguar representation | Named adult vanilla ocelot | Same translated vanilla entity and server hitbox | Real Paper spawn/name/health/ownership tags pass; client visual and hitbox acceptance deferred |
+| Habitat and populations | Loaded rainforest habitat, territory/population caps | Same server decisions | Automated habitat/cell/config tests; console occupied-territory and unloaded-location refusal pass |
+| Warnings, stalking and bounded attacks | Server chat/hiss, pathfinding and damage | Equivalent chat/sound/entity behavior | Automated behavior rules, permissions and disabled attack guard pass; player combat/navigation live checks deferred |
+| Fire/group deterrence and prey hunting | Server-local rules, chickens/rabbits | Same animals and rules | Automated deterrence/prey rules pass; real campfire RETREATING state and controlled chicken damage (3 per two seconds) pass; group/player/client checks deferred |
+| UUID homes and entity persistence | SQLite home plus chunk-persistent animal | Same server UUID/entity state | Automated registry restart, unload/removal and failed-write death tests pass; actual same-UUID/home/health restart, disable/re-enable adoption and death cleanup pass |
+
+Final acceptance must encounter a warning on both editions, back away without damage, test close engagement, armor, fire and three-player deterrence, bounded pursuit, night hunting and module toggles. No wildlife behavior is marked live-client tested. Jaguar appearance intentionally uses a vanilla ocelot equivalent; no Java-only model is introduced.

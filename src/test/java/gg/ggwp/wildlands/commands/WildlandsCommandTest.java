@@ -33,7 +33,7 @@ class WildlandsCommandTest {
         when(plugin.configuration()).thenReturn(new ConfigurationManager.Snapshot(
                 new Settings("wildlands.db", 30, Map.of("player-records", true), debug),
                 Map.of("prefix", "[Custom] ", "no-permission", "Denied", "unknown-command", "Unknown"), mock(HydrationSettings.class),
-                mock(EnvironmentSettings.class), mock(SeasonSettings.class), mock(WorldgenSettings.class)));
+                mock(EnvironmentSettings.class), mock(SeasonSettings.class), mock(WorldgenSettings.class), mock(WildlifeSettings.class)));
     }
     void run(String... args) { assertTrue(handler.onCommand(sender, command, "wildlands", args)); }
     @Test void deniesReloadWithoutInvokingMutation() {

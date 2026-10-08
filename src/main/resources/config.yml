@@ -11,5 +11,6 @@ modules:
   shelter: true
   seasons: true
   worldgen: true
+  wildlife: true
 debug:
   enabled: true

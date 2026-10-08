@@ -9,8 +9,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 public final class ConfigurationManager {
     public record Snapshot(Settings settings, Map<String, String> messages, HydrationSettings hydration,
-                           EnvironmentSettings environment, SeasonSettings seasons, WorldgenSettings worldgen) {
-        public Snapshot { messages = Map.copyOf(messages); java.util.Objects.requireNonNull(hydration); java.util.Objects.requireNonNull(environment); java.util.Objects.requireNonNull(seasons); java.util.Objects.requireNonNull(worldgen); }
+                           EnvironmentSettings environment, SeasonSettings seasons, WorldgenSettings worldgen, WildlifeSettings wildlife) {
+        public Snapshot { messages = Map.copyOf(messages); java.util.Objects.requireNonNull(hydration); java.util.Objects.requireNonNull(environment); java.util.Objects.requireNonNull(seasons); java.util.Objects.requireNonNull(worldgen); java.util.Objects.requireNonNull(wildlife); }
         public String message(String key) { return messages.get("prefix") + messages.get(key); }
     }
     private final Path directory;
@@ -30,7 +30,7 @@ public final class ConfigurationManager {
             values.put(key, value);
         }
         return new Snapshot(Settings.parse(config), values, HydrationSettings.parse(read("hydration.yml")),
-                EnvironmentSettings.parse(read("environment.yml")), SeasonSettings.parse(read("seasons.yml")), WorldgenSettings.parse(read("worldgen.yml")));
+                EnvironmentSettings.parse(read("environment.yml")), SeasonSettings.parse(read("seasons.yml")), WorldgenSettings.parse(read("worldgen.yml")), WildlifeSettings.parse(read("wildlife.yml")));
     }
 
     private YamlConfiguration read(String name) throws IOException, InvalidConfigurationException {
