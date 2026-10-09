@@ -423,7 +423,9 @@ tools/documentation.
 ## Milestone 10 --- Settlement Infrastructure and Wildlife Expansion
 
 Added at the user's request after completion of Milestones 1–9. This is
-planned scope, not a claim that these features already exist.
+approved scope, not a claim that the full milestone already exists. The
+first optional modeled Jaguar prototype is implemented; the remaining
+species and settlement stages are still pending.
 
 Settlement infrastructure:
 

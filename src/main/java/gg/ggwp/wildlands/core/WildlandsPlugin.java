@@ -27,6 +27,7 @@ public final class WildlandsPlugin extends JavaPlugin {
     private java.util.List<gg.ggwp.wildlands.storage.WorldRecord> savedWorlds;
     private java.util.List<gg.ggwp.wildlands.storage.WildlifeRecord> savedWildlife;
     private gg.ggwp.wildlands.wildlife.WildlifeManager wildlife;
+    private gg.ggwp.wildlands.wildlife.presentation.WildlifePresentation presentation;
     private gg.ggwp.wildlands.items.CustomItemManager crafting;
     private gg.ggwp.wildlands.world.LandmarkManager landmarks;
     private java.util.List<gg.ggwp.wildlands.storage.LandmarkRecord> savedLandmarks;
@@ -76,6 +77,8 @@ public final class WildlandsPlugin extends JavaPlugin {
                 config = loaded;
                 worlds = new gg.ggwp.wildlands.world.WorldManager(this, storage, savedWorlds);
                 modules.register(worlds);
+                presentation = new gg.ggwp.wildlands.wildlife.presentation.WildlifePresentation(this);
+                presentation.initialize();
                 wildlife = new gg.ggwp.wildlands.wildlife.WildlifeManager(this, storage, savedWildlife);
                 wildlife.initialize(); modules.register(wildlife);
                 getServer().getPluginManager().registerEvents(cauldronWater, this);
@@ -131,6 +134,8 @@ public final class WildlandsPlugin extends JavaPlugin {
                     throw new IllegalArgumentException("Crafting interval changes require a server restart; no settings changed");
                 if (candidate.landmarks().sampleSeconds() != config.landmarks().sampleSeconds())
                     throw new IllegalArgumentException("Discovery sampling changes require a server restart; no settings changed");
+                if (!candidate.visuals().javaUrl().equals(config.visuals().javaUrl()) || !candidate.visuals().javaSha1().equals(config.visuals().javaSha1()))
+                    throw new IllegalArgumentException("Wildlife pack delivery changes require a server restart; no settings changed");
                 var previous = config;
                 config = candidate;
                 try {
@@ -141,6 +146,7 @@ public final class WildlandsPlugin extends JavaPlugin {
                 }
                 crossplay.refresh();
                 wildlife.configurationChanged();
+                presentation.configurationChanged();
                 crafting.configurationChanged();
                 reply.accept("Configuration reloaded.");
             } catch (Exception error) {
@@ -176,6 +182,7 @@ public final class WildlandsPlugin extends JavaPlugin {
     public gg.ggwp.wildlands.seasons.SeasonManager seasons() { return seasons; }
     public gg.ggwp.wildlands.world.WorldManager worlds() { return worlds; }
     public gg.ggwp.wildlands.wildlife.WildlifeManager wildlife() { return wildlife; }
+    public gg.ggwp.wildlands.wildlife.presentation.WildlifePresentation presentation() { return presentation; }
     public gg.ggwp.wildlands.items.CustomItemManager crafting() { return crafting; }
     public gg.ggwp.wildlands.world.LandmarkManager landmarks() { return landmarks; }
     public gg.ggwp.wildlands.survival.ShelterService shelter() { return shelter; }

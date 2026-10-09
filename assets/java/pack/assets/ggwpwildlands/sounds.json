@@ -1,0 +1,42 @@
+{
+  "jaguar.idle": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:jaguar/idle",
+        "stream": false
+      }
+    ]
+  },
+  "jaguar.warning": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:jaguar/warning",
+        "stream": false
+      }
+    ]
+  },
+  "jaguar.attack": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:jaguar/attack",
+        "stream": false
+      }
+    ]
+  },
+  "jaguar.hurt": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:jaguar/hurt",
+        "stream": false
+      }
+    ]
+  },
+  "jaguar.death": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:jaguar/death",
+        "stream": false
+      }
+    ]
+  }
+}

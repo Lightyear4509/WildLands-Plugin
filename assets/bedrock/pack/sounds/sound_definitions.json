@@ -1,0 +1,35 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "ggwpwildlands:jaguar.idle": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/jaguar/idle"
+      ]
+    },
+    "ggwpwildlands:jaguar.warning": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/jaguar/warning"
+      ]
+    },
+    "ggwpwildlands:jaguar.attack": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/jaguar/attack"
+      ]
+    },
+    "ggwpwildlands:jaguar.hurt": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/jaguar/hurt"
+      ]
+    },
+    "ggwpwildlands:jaguar.death": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/jaguar/death"
+      ]
+    }
+  }
+}

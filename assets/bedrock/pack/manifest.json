@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "GGWP Wildlands Jaguar Prototype",
+    "description": "Original Jaguar presentation; gameplay stays on Paper",
+    "uuid": "abe98b0d-4cf4-423b-9b0f-2029a4732301",
+    "version": [
+      0,
+      10,
+      1
+    ],
+    "min_engine_version": [
+      1,
+      26,
+      30
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "616b98cf-36db-49a4-8edc-b7e11c2f3301",
+      "version": [
+        0,
+        10,
+        1
+      ]
+    }
+  ]
+}

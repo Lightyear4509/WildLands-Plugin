@@ -72,4 +72,4 @@ org.slf4j:jcl-over-slf4j:1.7.36=testRuntimeClasspath
 org.slf4j:slf4j-api:2.0.17=compileClasspath,testCompileClasspath,testRuntimeClasspath
 org.xerial:sqlite-jdbc:3.53.4.0=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.yaml:snakeyaml:2.2=compileClasspath,testCompileClasspath,testRuntimeClasspath
-empty=annotationProcessor,shadow,testAnnotationProcessor
+empty=annotationProcessor,geyserBridgeAnnotationProcessor,shadow,testAnnotationProcessor

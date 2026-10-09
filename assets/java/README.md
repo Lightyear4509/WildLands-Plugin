@@ -1,5 +1,7 @@
 # Java visual assets
 
+Milestone 10 has started with the original Jaguar prototype in `pack/`. It exports seven item models, a rosette texture and five synthesized Ogg cues. The Java 26.2 resource format is 88.0. The server uses opt-in transient ItemDisplays; ordinary mobs/items/blocks are not globally retextured. Pack activation, fallback, hitbox forwarding and installation are documented in `docs/MILESTONE-10-PROTOTYPE.md`. This is not a completed Milestone 10 release. Actual client appearance/audio acceptance is deferred. See `assets/PROVENANCE.md` and `tools/generate_wildlife_assets.py` for source/provenance.
+
 The combined Milestones 1–9 build uses vanilla blocks, item/container interfaces, dyed leather armor, water potions, cooked foods and a named adult ocelot for jaguars. It does not register custom model data or require a Java resource pack. Plain text HUD and journals work without pack installation. This directory documents the Java representation independently of Bedrock.
 
 Future custom visuals must be optional presentation: keep authoritative item/entity identity in server metadata, retain usable vanilla fallbacks and supply a separately validated Bedrock asset set and Geyser mapping. Do not ship an empty required pack or assume Java item/entity models translate automatically. Review resource format requirements for the exact supported Minecraft version when real assets are introduced. Record actual client tests in CROSSPLAY-COMPATIBILITY.md.

@@ -56,6 +56,14 @@ With Java and Bedrock simultaneously connected, create different camps, discover
 
 Run `/wildlands hud off` and `on`. With hydration disabled, temperature/wetness should remain visible; disabled fields should disappear. Check transition-season text and routes on a small Bedrock display. Test both clients' ordinary accounts receive permission denial for admin debug/health, reload, setters, world creation, equipment grants and landmark administration. Toggle gameplay modules independently and together; retained items/worlds/data must survive, tasks/recipes must stop as documented. Submit malformed configuration, confirm reload rejection with previous settings retained, then restore valid files and reload.
 
+## Milestone 10 Jaguar prototype — append to the eventual collective session
+
+This section is untested and covers the first stage only. Enable the prototype and configure both packs/optional Geyser extension as described in MILESTONE-10-PROTOTYPE.md. On both editions, compare accepted-pack `/wildlands visuals on` against declined/absent-pack and `/wildlands visuals off`. The fallback must remain a visible, named, interactable ocelot. An unowned vanilla ocelot must retain its original appearance. Check mixed Java/Bedrock viewers and simultaneous packed/unpacked Java players.
+
+Inspect rosette texture, silhouette, feet/ground alignment, head/tail orientation, idle/walk/stalk/warning/attack/retreat presentation and sound audibility without excessive repeated calls. Attack from inside/outside reach, through walls, with armor/weapons and at different cooldowns. The same authoritative animal must take damage once, warn/retreat/attack normally and drop/remove once. Check native Bedrock hitboxes and the Java proxy near model edges. Decline/download failure and unrelated packs must never hide the fallback.
+
+Reconnect, cross worlds, move out of tracking range, unload/reload a chunk, kill/remove animals, toggle wildlife/visuals and restart. There must be no duplicate animals or orphan displays/hitboxes. Recheck without the optional extension and without Geyser/Floodgate. Provider/pack negotiation errors must retain native presentation. Capybara/Tapir and settlement checks will be added when those stages are implemented.
+
 ## Finish
 
 Stop normally, back up the plugin data and entire shared world directory together, and retain the version/result sheet. Restore temporary settings/operator status and remove any test probes. A failed client check remains open until reproduced, fixed and retested on the affected edition.

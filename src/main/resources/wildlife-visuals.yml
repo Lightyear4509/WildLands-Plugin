@@ -1,0 +1,8 @@
+schema-version: 1
+# Prototype is opt-in. Gameplay and named vanilla animals work without packs.
+enabled: false
+max-animals: 32
+java:
+  # Host the generated Java ZIP over HTTPS; copy its SHA-1 from the build.
+  url: ''
+  sha1: ''

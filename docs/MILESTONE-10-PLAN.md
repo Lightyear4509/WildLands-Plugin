@@ -1,6 +1,6 @@
 # Milestone 10 — settlement infrastructure and wildlife expansion
 
-This document records the user's requested next milestone. No Milestone 10 runtime feature or asset is implemented yet. The existing 0.9.0 build remains unchanged.
+Implementation has started with the optional Jaguar presentation prototype in 0.10.0-prototype.1. This is the first stage, not a completed Milestone 10 build. See MILESTONE-10-PROTOTYPE.md for implemented adapters, pack assets and limitations; the roster and settlement stages remain pending.
 
 ## Stages
 
@@ -24,7 +24,7 @@ These are starting recommendations drawn from SPEC.md, not a promise to add ever
 
 Server AI, damage, hitboxes, spawning and persistence remain authoritative and identical across editions. Models and sounds are presentation layered over that state. Provide separate Java and Bedrock pack outputs, source assets, identifiers and mapping documentation. Use original or properly licensed assets and record provenance; do not copy third-party models or animal recordings without permission.
 
-Geyser's [resource-pack guidance](https://geysermc.org/wiki/geyser/packs/) requires Bedrock pack delivery rather than assuming a Java pack is translated. Its [custom-item documentation](https://geysermc.org/wiki/geyser/custom-items/) describes explicit mappings. Paper [display entities](https://docs.papermc.io/paper/dev/display-entities/) offer a Java presentation mechanism, but this alone does not establish Bedrock compatibility. Geyser's [Rainbow guidance](https://geysermc.org/wiki/other/rainbow/) points to community display-entity extensions. These are options to investigate in the prototype, not selected runtime dependencies or validated compatibility claims. Do not use Rainbow's client mod as a requirement for players.
+Geyser's [resource-pack guidance](https://geysermc.org/wiki/geyser/packs/) requires Bedrock pack delivery rather than assuming a Java pack is translated. Initial investigation considered [custom-item mappings](https://geysermc.org/wiki/geyser/custom-items/) and [community display translation](https://geysermc.org/wiki/other/rainbow/). The prototype now selects Paper displays for Java and Geyser's [custom-entity API](https://geysermc.org/wiki/geyser/custom-entities/) for Bedrock, with its own optional server extension. No Rainbow client mod or display-translation extension is required. Adapter/file/native validation is recorded separately from deferred client appearance acceptance.
 
 Custom visuals/sounds require downloaded resource-pack content. No Fabric/Forge/NeoForge/OptiFine or other client mod is permitted. An optional server rendering bridge may be necessary; evaluate its compatibility and distribution before selecting it. The plugin must still start without crossplay providers or a rendering bridge, using named vanilla equivalents when presentation is unavailable or a player declines a pack. Fallback animals must remain visible and interactable, not invisible hitboxes.
 

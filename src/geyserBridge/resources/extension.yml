@@ -1,0 +1,6 @@
+id: wildlandsmodels
+name: WildlandsModels
+main: gg.ggwp.wildlands.geyser.WildlandsModels
+api: 2.11.0
+version: 0.10.0-prototype.1
+authors: [GGWP]

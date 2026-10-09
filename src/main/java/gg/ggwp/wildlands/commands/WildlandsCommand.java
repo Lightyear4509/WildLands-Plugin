@@ -36,6 +36,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
                 if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin wildlife list | wildlife spawn <world> <x> <y> <z>");
                 say(sender, "Collect and treat water to maintain hydration.");
                 say(sender, "/wildlands crafting — survival equipment and station guide");
+                say(sender, "/wildlands visuals on|off — optional Jaguar model prototype");
                 if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin crafting info | crafting give <player> <item>");
                 say(sender, "/landmarks [page] | /landmark <name|camp> | /wildlands navigate <name|camp|off> | camp [set|info] | expedition");
                 if (sender.hasPermission(ADMIN)) say(sender, "/wildlands admin landmarks list [world] | landmarks debug <player-uuid>");
@@ -53,6 +54,12 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
                 }
             }
             case "hud" -> new HydrationCommand(plugin).hud(sender, args);
+            case "visuals" -> {
+                if (!permitted(sender, USE)) return true;
+                if (!(sender instanceof Player player)) { say(sender, "Players only."); return true; }
+                if (args.length != 2 || !List.of("on", "off").contains(args[1].toLowerCase(Locale.ROOT))) say(sender, "/wildlands visuals on|off");
+                else say(sender, plugin.presentation().choose(player, args[1].equalsIgnoreCase("on")));
+            }
             case "crafting" -> { if (permitted(sender, USE)) new CraftingCommand(plugin).guide(sender); }
             case "landmarks", "landmark", "navigate", "camp", "expedition" -> new ExplorationCommand(plugin).player(sender, args);
             case "reload" -> {
@@ -128,6 +135,7 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         if (plugin.crafting() != null) say(sender, plugin.crafting().diagnostics());
         if (plugin.landmarks() != null) say(sender, plugin.landmarks().diagnostics());
         if (plugin.wildlife() != null) plugin.wildlife().diagnostics().stream().limit(1).forEach(line -> say(sender, line));
+        if (plugin.presentation() != null) say(sender, plugin.presentation().diagnostics());
         if (plugin.worlds() != null) say(sender, "Registered rainforest worlds: " + plugin.worlds().records().size());
         double[] tps = plugin.getServer().getTPS();
         if (tps != null && tps.length > 0) say(sender, String.format(Locale.ROOT,
@@ -138,10 +146,10 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         if (plugin.state() != WildlandsPlugin.State.READY) return List.of();
         List<String> options = new ArrayList<>();
         if (args.length == 1) {
-            if (sender.hasPermission(USE)) options.addAll(List.of("help", "status", "hud", "crafting", "landmarks", "landmark", "navigate", "camp", "expedition"));
+            if (sender.hasPermission(USE)) options.addAll(List.of("help", "status", "hud", "visuals", "crafting", "landmarks", "landmark", "navigate", "camp", "expedition"));
             if (sender.hasPermission(ADMIN)) options.add("reload");
             if (sender.hasPermission(ADMIN) || sender.hasPermission(DEBUG)) options.add("admin");
-        } else if (args.length == 2 && args[0].equalsIgnoreCase("hud") && sender.hasPermission(USE)) {
+        } else if (args.length == 2 && (args[0].equalsIgnoreCase("hud") || args[0].equalsIgnoreCase("visuals")) && sender.hasPermission(USE)) {
             options.addAll(List.of("on", "off"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("admin")) {
             if (sender.hasPermission(ADMIN)) options.addAll(List.of("modules", "hydration", "temperature", "season", "world", "wildlife", "crafting", "landmarks"));

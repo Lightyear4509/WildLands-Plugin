@@ -1,0 +1,48 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ggwpwildlands:jaguar",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/jaguar"
+      },
+      "geometry": {
+        "default": "geometry.ggwpwildlands.jaguar"
+      },
+      "animations": {
+        "idle": "animation.ggwpwildlands.jaguar.idle",
+        "walk": "animation.ggwpwildlands.jaguar.walk",
+        "stalk": "animation.ggwpwildlands.jaguar.stalk",
+        "warning": "animation.ggwpwildlands.jaguar.warning",
+        "attack": "animation.ggwpwildlands.jaguar.attack",
+        "death": "animation.ggwpwildlands.jaguar.death"
+      },
+      "scripts": {
+        "animate": [
+          "idle",
+          {
+            "walk": "query.modified_move_speed > 0.01"
+          },
+          {
+            "stalk": "query.property('ggwpwildlands:phase') == 1"
+          },
+          {
+            "warning": "query.property('ggwpwildlands:phase') == 2"
+          },
+          {
+            "attack": "query.property('ggwpwildlands:phase') == 3"
+          },
+          {
+            "death": "!query.is_alive"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.ggwpwildlands.jaguar"
+      ]
+    }
+  }
+}

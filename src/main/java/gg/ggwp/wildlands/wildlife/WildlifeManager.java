@@ -57,6 +57,7 @@ public final class WildlifeManager implements WildlandsModule, Listener {
         for (var entry : new ArrayList<>(loaded.entrySet())) if (!managed(entry.getValue().cat.getWorld()) || loaded.size() > settings().maxLoaded()) {
             entry.getValue().cat.getPathfinder().stopPathfinding(); entry.getValue().cat.setTarget(null);
             loaded.remove(entry.getKey()); rotation.remove(entry.getKey());
+            if (plugin.presentation() != null) plugin.presentation().detach(entry.getKey());
         }
         for (World world : plugin.getServer().getWorlds()) for (Entity entity : world.getEntities()) {
             try { adopt(entity); }
@@ -65,6 +66,7 @@ public final class WildlifeManager implements WildlandsModule, Listener {
     }
     @Override public void enable() {
         enabled = true;
+        if (plugin.presentation() != null) plugin.presentation().enable();
         // One traversal of already loaded entities at enable; thereafter entity lifecycle events maintain the cache.
         for (World world : plugin.getServer().getWorlds()) for (Entity entity : world.getEntities()) adopt(entity);
         sampleTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::sample, settings().sampleTicks(), settings().sampleTicks());
@@ -74,6 +76,7 @@ public final class WildlifeManager implements WildlandsModule, Listener {
     }
     @Override public void disable() {
         enabled = false;
+        if (plugin.presentation() != null) plugin.presentation().disable();
         for (BukkitTask task : new BukkitTask[]{sampleTask, spawnTask, retryTask}) if (task != null) task.cancel();
         sampleTask = spawnTask = retryTask = null;
         for (Session session : loaded.values()) { session.cat.getPathfinder().stopPathfinding(); session.cat.setTarget(null); }
@@ -114,6 +117,7 @@ public final class WildlifeManager implements WildlandsModule, Listener {
         if (!record.worldUuid().equals(cat.getWorld().getUID())) { plugin.getLogger().warning("Jaguar world identity mismatch: " + record.uuid()); return; }
         configure(cat);
         loaded.put(record.uuid(), new Session(cat, record, ticks)); rotation.addLast(record.uuid());
+        if (plugin.presentation() != null) plugin.presentation().attach(cat);
     }
     private void sample() {
         ticks += settings().sampleTicks();
@@ -121,8 +125,8 @@ public final class WildlifeManager implements WildlandsModule, Listener {
         for (int i = 0; i < budget; i++) {
             UUID id = rotation.removeFirst(); Session session = loaded.get(id);
             if (session == null) continue;
-            if (!session.cat.isValid() || session.cat.isDead()) { loaded.remove(id); continue; }
-            if (!managed(session.cat.getWorld())) { session.cat.getPathfinder().stopPathfinding(); session.cat.setTarget(null); loaded.remove(id); continue; }
+            if (!session.cat.isValid() || session.cat.isDead()) { loaded.remove(id); if (plugin.presentation() != null) plugin.presentation().detach(id); continue; }
+            if (!managed(session.cat.getWorld())) { session.cat.getPathfinder().stopPathfinding(); session.cat.setTarget(null); loaded.remove(id); if (plugin.presentation() != null) plugin.presentation().detach(id); continue; }
             rotation.addLast(id);
             try { decide(session); }
             catch (Exception error) { session.cat.getPathfinder().stopPathfinding(); plugin.report("Jaguar decision failed for " + id, error); }
@@ -181,9 +185,10 @@ public final class WildlifeManager implements WildlandsModule, Listener {
         var before = session.memory.phase();
         session.memory = JaguarBehavior.step(session.memory, observation, settings().limits(), Math.clamp((ticks - session.lastSample) / 20.0, .05, 10));
         session.lastSample = ticks;
+        if (plugin.presentation() != null) plugin.presentation().phase(session.record.uuid(), session.memory.phase());
         if (session.memory.phase() != JaguarBehavior.Phase.RETREATING) session.retreatGoal = null;
         if (session.memory.phase() == JaguarBehavior.Phase.WARNING && before != JaguarBehavior.Phase.WARNING) {
-            cat.getWorld().playSound(here, Sound.ENTITY_CAT_HISS, 1, .7f);
+            cue(cat, "warning", Sound.ENTITY_CAT_HISS);
             if (target instanceof Player player) player.sendMessage(Component.text("[Wildlands] A jaguar warns you away. Back off, gather allies or seek a lit campfire."));
         }
         switch (session.memory.phase()) {
@@ -196,7 +201,7 @@ public final class WildlifeManager implements WildlandsModule, Listener {
                     if (cat.getWorld().getDifficulty() != Difficulty.PEACEFUL && here.distanceSquared(target.getLocation()) <= settings().biteRange() * settings().biteRange()
                             && cat.hasLineOfSight(target) && ticks - session.lastBite >= settings().biteSeconds() * 20) {
                         session.lastBite = ticks; target.damage(settings().damage(), cat);
-                        cat.getWorld().playSound(here, Sound.ENTITY_CAT_HISS, .7f, .6f);
+                        cue(cat, "attack", Sound.ENTITY_CAT_HISS);
                     }
                 }
             }
@@ -291,12 +296,23 @@ public final class WildlifeManager implements WildlandsModule, Listener {
     }
     private void removed(Entity entity, boolean permanent) {
         if (!tagged(entity)) return;
+        if (plugin.presentation() != null) plugin.presentation().detach(entity.getUniqueId());
         loaded.remove(entity.getUniqueId()); rotation.remove(entity.getUniqueId());
         if (permanent) { WildlifeRecord record = known.remove(entity.getUniqueId()); if (record != null) save(List.of(record.dead())); }
     }
     @EventHandler public void entitiesLoad(EntitiesLoadEvent event) { event.getEntities().forEach(this::adopt); }
     @EventHandler public void entitiesUnload(EntitiesUnloadEvent event) { event.getEntities().forEach(entity -> removed(entity, false)); }
-    @EventHandler(priority = EventPriority.MONITOR) public void death(EntityDeathEvent event) { removed(event.getEntity(), true); }
+    @EventHandler(priority = EventPriority.MONITOR) public void death(EntityDeathEvent event) {
+        if (tagged(event.getEntity())) cue((Ocelot) event.getEntity(), "death", Sound.ENTITY_CAT_DEATH);
+        removed(event.getEntity(), true);
+    }
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true) public void hurt(EntityDamageEvent event) {
+        if (tagged(event.getEntity()) && event.getFinalDamage() > 0) cue((Ocelot) event.getEntity(), "hurt", Sound.ENTITY_CAT_HURT);
+    }
+    private void cue(Ocelot cat, String cue, Sound fallback) {
+        if (plugin.presentation() != null) plugin.presentation().sound(cat.getUniqueId(), cue, fallback);
+        else cat.getWorld().playSound(cat.getLocation(), fallback, .7f, .7f);
+    }
     @EventHandler(priority = EventPriority.MONITOR) public void remove(EntityRemoveEvent event) { removed(event.getEntity(), event.getCause() != EntityRemoveEvent.Cause.UNLOAD); }
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void damage(EntityDamageByEntityEvent event) {

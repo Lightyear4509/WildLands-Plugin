@@ -88,7 +88,7 @@ class WildlandsCommandTest {
     @Test void completionHidesUnauthorizedCommandsAndInvisiblePlayers() {
         assertTrue(handler.onTabComplete(sender, command, "wildlands", new String[]{""}).isEmpty());
         when(sender.hasPermission("ggwpwildlands.use")).thenReturn(true);
-        assertEquals(List.of("camp", "crafting", "expedition", "help", "hud", "landmark", "landmarks", "navigate", "status"), handler.onTabComplete(sender, command, "wildlands", new String[]{""}));
+        assertEquals(List.of("camp", "crafting", "expedition", "help", "hud", "landmark", "landmarks", "navigate", "status", "visuals"), handler.onTabComplete(sender, command, "wildlands", new String[]{""}));
         var viewer = mock(Player.class);
         var visible = mock(Player.class);
         var hidden = mock(Player.class);

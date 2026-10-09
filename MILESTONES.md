@@ -13,7 +13,7 @@ The original nine-milestone implementation goal is complete, with one commit per
 | 7 | Survival crafting and camp/settlement equipment | Implemented and reviewed: clean build, 123 tests, native equipment/refill recipes, rain/filter/preservation/cooking, fuel modifier, module toggles and station restart persistence passed; live crossplay checks deferred |
 | 8 | Landmarks, ruins, discoveries, navigation, expeditions | Implemented and reviewed: clean build, 137 tests, native ruins/compass metadata, schema upgrade, module reload and isolated UUID/camp/expedition restart checks passed; live crossplay checks deferred |
 | 9 | Performance, balance, resource packs, multiplayer/crossplay polish, admin tools/docs | Implemented and reviewed: 147 automated tests, preserved terrain fingerprints, native optional-provider startup, distant-generation replay, module reload/restart and admin health checks; collective build/checklist supplied; live multiplayer/crossplay and extended load/balance checks deferred |
-| 10 | Settlement infrastructure and wildlife models, animations, behaviors, AI and sounds | Planned at the user's request; implementation not started. Proposed first roster: modeled Jaguar, Capybara and Tapir; prototype rendering parity first, then species expansion and shared settlement water/navigation |
+| 10 | Settlement infrastructure and wildlife models, animations, behaviors, AI and sounds | In progress: first optional modeled Jaguar prototype, separate packs and guarded Geyser extension. Automated/native adapter checks recorded; client acceptance deferred. Capybara, Tapir and settlement water/navigation are subsequent stages |
 
 ## Gate for each milestone
 

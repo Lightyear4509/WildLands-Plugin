@@ -150,14 +150,16 @@ Final acceptance must discover a natural landmark and ruin, review the journal, 
 
 The full 0.9.0 build passes 147 automated tests. Resource packs remain optional future presentation work: current native equivalents require none, and separate Java/Bedrock asset documentation is maintained. Per the user's instruction, parity is assumed for implementation progress; no deferred client result is called tested. Use docs/FINAL-TEST-CHECKLIST.md for one collective acceptance session and docs/OPERATIONS.md for limits, balance and recovery.
 
-## Milestone 10 — planned; not implemented or tested
+## Milestone 10 — Jaguar prototype in progress; live acceptance deferred
 
-| Planned feature | Java | Bedrock through Geyser/Floodgate | Tested |
+| Feature | Java | Bedrock through Geyser/Floodgate | Tested |
 | --- | --- | --- | --- |
-| Species models, textures and animations | Dedicated resource-pack presentation and server rendering adapter | Separate Bedrock assets/mappings and compatible rendering adapter | Not implemented; validate one Jaguar prototype before roster expansion |
-| Species AI, habitats and populations | Bounded authoritative server behavior | Identical server behavior and interaction rules | Not implemented |
-| Species sounds | Java pack sound identifiers and server cues | Equivalent Bedrock sound assets and translated cues | Not implemented |
-| Declined/unavailable pack fallback | Visible named vanilla equivalent | Visible named vanilla equivalent | Not implemented; preserve gameplay/hitboxes without client mods |
-| Shared settlements, water storage/treatment and navigation | UUID membership, native controls and server accounting | Same membership, controls and accounting | Not implemented |
+| Jaguar models/textures | Seven original item models on transient Paper displays | Separate original geometry/texture through optional WildlandsModels extension | Pack reference/manifest checks and native Paper display/model creation pass; Geyser registers custom entity; appearance untested |
+| Jaguar animations | Idle/tail, walking legs, stalking crouch and warning head pose | Bedrock idle/walk/stalk/warning/attack/death definitions and shared phase property | Automated locomotion bounds/definition references and UUID/state filtering; actual animation playback deferred |
+| Jaguar AI and hitboxes | Existing authoritative native Jaguar AI; matching Interaction proxy for packed viewers | Same native entity ID/AI/hitbox with presentation replacement | Existing AI regressions; automated attack authorization/range and native hitbox dimensions/cleanup; client aiming/combat deferred |
+| Jaguar sound cues | Original synthesized Ogg cues, custom events for pack-ready viewers | Separate Ogg assets and equivalent event identifiers | Sound references/signatures and burst/cooldown checks; audible playback untested |
+| Pack acceptance/fallback | Own-pack success only; declined/failed/unrelated/late/off stays visible or restores native animal | Offered-pack negotiation observer plus explicit model opt-in; absent/declined/unknown provider stays native | Automated negotiation/delegation/fallback tests; real plugin startup with providers present/absent; real client negotiation deferred |
+| Lifecycle and budgets | Distance/display cap; cleanup on detach/unload/death/disable/disconnect | UUID registry/provider gating and native fallback restoration | Automated lifecycle/budget checks; native zero-display-leak probe; longer mixed-client session deferred |
+| Capybara/Tapir, species expansion and shared settlements | Subsequent Milestone 10 stages | Same planned gameplay with separate future presentation | Not implemented |
 
-See docs/MILESTONE-10-PLAN.md. Custom visuals and sounds require resource-pack content; packs are separate from client mods. Geyser does not automatically convert Java packs or establish custom model parity. No particular rendering bridge has been selected or validated yet. The existing 0.9.0 build still requires no pack.
+The first implementation stage is `0.10.0-prototype.1`, not a completed Milestone 10 release. Visuals are disabled by default. Geyser 2.11.3 build 1245 is the provider checked on the disposable server; the pack-negotiation observer uses guarded version-sensitive reflection and fails closed. Simulated negotiation and valid asset files are not evidence of actual Java/Bedrock rendering. No client mod is required. See docs/MILESTONE-10-PROTOTYPE.md for installation, architecture and remaining work. All new live client checks remain deferred to the collective build, as requested.

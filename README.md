@@ -2,6 +2,8 @@
 
 Server-authoritative rainforest survival project. **Milestones 1–9 are implemented in the combined 0.9.0 test build.** Hydration adds drinking, water quality, campfire boiling and an optional action-bar HUD. Environment adds temperature, wetness, shade, campfire warmth and shelter status. Seasons add per-world clocks, weather, temperature and natural crop-growth modifiers. World generation adds deterministic rainforest regions, waterways, canopy, caves and mining resources. Wildlife adds territorial jaguars. Crafting adds camp equipment, water filtration, portable supplies and food preservation. Exploration adds ruins, saved discoveries, camp waypoints, compass routes and expedition records. Polish adds bounded spawn selection, generation optimizations, a compact HUD and health diagnostics. Later live Java/Bedrock acceptance is deferred at the user's request; use [the collective checklist](docs/FINAL-TEST-CHECKLIST.md). Actual evidence is recorded in CROSSPLAY-COMPATIBILITY.md.
 
+**Milestone 10 is in progress.** The current `0.10.0-prototype.1` build adds the first optional modeled Jaguar prototype over the existing gameplay. It includes separate Java/Bedrock packs, an optional Geyser extension, animated Java displays, shared native gameplay and guarded pack fallbacks. Capybara, Tapir and settlement infrastructure remain subsequent stages; this prototype is not a completed Milestone 10 release. See [prototype setup and limitations](docs/MILESTONE-10-PROTOTYPE.md).
+
 ## Requirements and build
 
 - JDK **25** (set `JAVA_HOME` to its installation directory).
@@ -20,9 +22,9 @@ Linux/macOS:
 sh ./gradlew clean build
 ```
 
-Install **`build/libs/GGWPWildlands-0.9.0.jar`**. The `-plain.jar` is a development artifact without SQLite; do not install it. `build/distributions/GGWPWildlands-0.9.0-release.zip` bundles the plugin, configuration examples, documentation and final test checklist. Tests run during `build`; HTML results are in `build/reports/tests/test/index.html`. This is the collective build for final client testing; deferred client checks are not marked passed.
+Install **`build/libs/GGWPWildlands-0.10.0-prototype.1.jar`**. The `-plain.jar` is a development artifact without SQLite; do not install it. `build/distributions/GGWPWildlands-0.10.0-prototype.1-release.zip` bundles the plugin, both optional packs, the optional Geyser extension, configuration examples and documentation. Tests run during `build`; HTML results are in `build/reports/tests/test/index.html`. The earlier 0.9.0 build remains the completed Milestones 1–9 checkpoint. Deferred client checks are not marked passed.
 
-The build targets Java 25 bytecode and pins Paper API `26.2.build.121-stable`. SQLite is bundled in the distributable, including its native libraries and JDBC service descriptor. No runtime dependency download is required by Wildlands. The Gradle wrapper distribution is SHA-256 pinned, and dependency versions are locked in gradle.lockfile. SQLite uses Paper's provided SLF4J API rather than bundling a second logging API. Java 25 may warn about SQLite native-library access unless the server is launched with --enable-native-access=ALL-UNNAMED.
+The build targets Java 25 bytecode and pins Paper API `26.2.build.121-stable`. SQLite is bundled in the distributable, including its native libraries and JDBC service descriptor. No runtime dependency download is required by Wildlands. The Gradle wrapper distribution is SHA-256 pinned, and main-plugin dependency versions are locked in gradle.lockfile. The separate optional bridge compiles against timestamp-pinned Geyser API/events artifacts; these provider classes are not bundled into either JAR. SQLite uses Paper's provided SLF4J API rather than bundling a second logging API. Java 25 may warn about SQLite native-library access unless the server is launched with --enable-native-access=ALL-UNNAMED.
 
 ## Installation
 
@@ -32,7 +34,7 @@ The build targets Java 25 bytecode and pins Paper API `26.2.build.121-stable`. S
 4. Configure `plugins/GGWPWildlands/config.yml`, `messages.yml`, `hydration.yml`, `environment.yml`, `seasons.yml`, `worldgen.yml`, `wildlife.yml`, `crafting.yml`, `food.yml`, and `landmarks.yml`.
 5. Run `wildlands admin health` from the server console, then follow the collective checklist.
 
-Geyser-Spigot and Floodgate are optional. Install/configure their official server plugins to support Bedrock connections. Wildlands requires no client mod or resource pack. Do not install the plain and shaded JARs together. Use a full server restart for plugin updates; Bukkit/server hot reload is unsupported.
+Geyser-Spigot and Floodgate are optional. Install/configure their official server plugins to support Bedrock connections. Wildlands gameplay requires no client mod or resource pack. Optional custom Jaguar presentation uses downloaded resource packs; [its setup](docs/MILESTONE-10-PROTOTYPE.md) also describes the separate server-side Bedrock extension. Do not put the extension in Paper's `plugins/` directory. Do not install the plain and shaded JARs together. Use a full server restart for plugin updates; Bukkit/server hot reload is unsupported.
 
 Official references: [Paper project setup](https://docs.papermc.io/paper/dev/project-setup/), [Geyser API](https://geysermc.org/wiki/geyser/getting-started-with-the-api/), [Floodgate API and proxy configuration](https://geysermc.org/wiki/floodgate/api/).
 
