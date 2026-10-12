@@ -163,3 +163,9 @@ The full 0.9.0 build passes 147 automated tests. Resource packs remain optional 
 | Capybara/Tapir, species expansion and shared settlements | Subsequent Milestone 10 stages | Same planned gameplay with separate future presentation | Not implemented |
 
 The first implementation stage is `0.10.0-prototype.1`, not a completed Milestone 10 release. Visuals are disabled by default. Geyser 2.11.3 build 1245 is the provider checked on the disposable server; the pack-negotiation observer uses guarded version-sensitive reflection and fails closed. Simulated negotiation and valid asset files are not evidence of actual Java/Bedrock rendering. No client mod is required. See docs/MILESTONE-10-PROTOTYPE.md for installation, architecture and remaining work. All new live client checks remain deferred to the collective build, as requested.
+
+## Wildlife expansion checkpoint — goal still active
+
+`0.10.0-wildlife.2` adds Capybara and Tapir to Jaguar. Java uses their own item models; Bedrock uses separately authored geometry/animations and per-species Geyser definitions. The native pig fallback has the same server UUID/health/hitbox/AI, with feeding/breeding/saddling guarded. Automated checks cover all three packs/mappings and species persistence/caps. Native probes pass each model/hitbox, Capybara swim/group/fear states, Tapir day/night states, and six same-UUID actors with injured health after restart without providers. All 15 cues decode successfully. No live rendering/audio or human interaction is claimed tested.
+
+Fresh low-end presentation limits are 12 models, 32-block range, six-tick updates, distance LOD and optional static movement. A six-animal two-thread/2-GB native fixture runs at 20 TPS; that is not full-load or client FPS evidence. Further roster/load/interaction checks and collective live-test delivery remain ongoing. See docs/WILDLIFE-EXPANSION.md and docs/validation/wildlife-expansion-server.md. Settlements remain a separate pending stage.

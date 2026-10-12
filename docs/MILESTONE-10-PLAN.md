@@ -1,6 +1,6 @@
 # Milestone 10 — settlement infrastructure and wildlife expansion
 
-Implementation has started with the optional Jaguar presentation prototype in 0.10.0-prototype.1. This is the first stage, not a completed Milestone 10 build. See MILESTONE-10-PROTOTYPE.md for implemented adapters, pack assets and limitations; the roster and settlement stages remain pending.
+Implementation has advanced from the Jaguar prototype to the Jaguar/Capybara/Tapir wildlife.2 checkpoint. See WILDLIFE-EXPANSION.md for current behavior, budgets and evidence. The user has started a broader animal/testing goal; further fauna and comprehensive readiness checks continue. Settlement stages remain pending, and this is not a completed Milestone 10 build.
 
 ## Stages
 

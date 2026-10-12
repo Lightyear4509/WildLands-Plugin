@@ -1,5 +1,7 @@
 # Milestone 10: first Jaguar presentation prototype
 
+Historical first checkpoint. The active implementation has advanced to `0.10.0-wildlife.2` with Capybara/Tapir and lower fresh visual defaults; see WILDLIFE-EXPANSION.md. Use matching current plugin, extension and packs. The adapter/fallback principles below still apply, but the old artifact names/counts describe the first prototype.
+
 Version `0.10.0-prototype.1` starts stage 1 of the approved plan. It preserves the existing Jaguar AI, damage, health, UUID/home persistence and native ocelot fallback. The completed Milestones 1–9 systems remain present. It does not yet add Capybara, Tapir or settlements and must not be treated as the complete Milestone 10 release.
 
 ## Build outputs and installation

@@ -1,0 +1,20 @@
+schema-version: 1
+# All species share wildlife.yml's worlds, batch size, loaded and world-wide caps.
+capybara:
+  enabled: true
+  max-per-world: 12
+  max-per-cell: 4
+  health: 16
+  spawn-chance: 0.12
+  avoidance-range: 4
+  roam-radius: 24
+  flee-seconds: 10
+tapir:
+  enabled: true
+  max-per-world: 8
+  max-per-cell: 2
+  health: 24
+  spawn-chance: 0.08
+  avoidance-range: 6
+  roam-radius: 32
+  flee-seconds: 12

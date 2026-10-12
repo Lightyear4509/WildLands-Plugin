@@ -9,6 +9,13 @@ public final class HabitatManager {
         return region == Region.DENSE_RAINFOREST || region == Region.BAMBOO_FORESTS
                 || region == Region.WETLANDS || region == Region.JUNGLE_CLEARINGS;
     }
+    public static boolean accepts(Species species, Region region) {
+        return switch (species) {
+            case JAGUAR -> jaguar(region);
+            case CAPYBARA -> region == Region.WETLANDS || region == Region.FLOODPLAINS || region == Region.TROPICAL_RIVERS;
+            case TAPIR -> region == Region.DENSE_RAINFOREST || region == Region.BAMBOO_FORESTS || region == Region.RAINFOREST_HIGHLANDS;
+        };
+    }
     public static long cell(int x, int z) {
         return ((long) Math.floorDiv(x, 128) << 32) | (Math.floorDiv(z, 128) & 0xffffffffL);
     }

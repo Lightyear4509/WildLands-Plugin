@@ -1,5 +1,7 @@
 # Original wildlife prototype assets
 
+The animal expansion now includes project-original Capybara and Tapir shapes, brown textures and synthesized chirp/whistle cues. The exporter additionally canonicalizes Ogg container serials and CRCs for reproducible files. No additional third-party media is copied.
+
 The Jaguar cuboid model, rosette texture, Java item definitions, Bedrock geometry/animation definitions and synthesized sound cues were authored in this project. No third-party model, texture or animal recording was copied. The synthesis is deliberately stylized; it is not a claim of authentic zoological recording.
 
 Editable source and deterministic exporter: `tools/generate_wildlife_assets.py`. Asset-generation dependencies are listed in `tools/asset-requirements.txt`. Generated assets are committed, so normal Gradle builds require Java 25 only. To regenerate, install those Python dependencies in a local environment and run the script from the repository. The exporter writes both pack source trees separately; it does not convert an arbitrary Java pack.

@@ -11,7 +11,8 @@ final class WildlifeRepository {
         try (var query = database.connection().prepareStatement("SELECT * FROM wildlife WHERE alive=1"); var rows = query.executeQuery()) {
             while (rows.next()) {
                 try { records.add(new WildlifeRecord(UUID.fromString(rows.getString("uuid")), UUID.fromString(rows.getString("world_uuid")),
-                        rows.getDouble("home_x"), rows.getDouble("home_y"), rows.getDouble("home_z"), true)); }
+                        rows.getDouble("home_x"), rows.getDouble("home_y"), rows.getDouble("home_z"), true,
+                        gg.ggwp.wildlands.wildlife.Species.valueOf(rows.getString("species")))); }
                 catch (IllegalArgumentException failure) { throw new SQLException("Invalid wildlife record", failure); }
                 if (records.size() > 4096) throw new SQLException("Wildlife registry exceeds 4096 animals");
             }
@@ -22,14 +23,14 @@ final class WildlifeRepository {
         if (records.isEmpty()) return;
         var connection = database.connection(); connection.setAutoCommit(false);
         try (var upsert = connection.prepareStatement("""
-                INSERT INTO wildlife(uuid,world_uuid,home_x,home_y,home_z,alive) VALUES(?,?,?,?,?,?)
+                INSERT INTO wildlife(uuid,world_uuid,home_x,home_y,home_z,alive,species) VALUES(?,?,?,?,?,?,?)
                 ON CONFLICT(uuid) DO UPDATE SET world_uuid=excluded.world_uuid,home_x=excluded.home_x,
-                  home_y=excluded.home_y,home_z=excluded.home_z,alive=excluded.alive
+                  home_y=excluded.home_y,home_z=excluded.home_z,alive=excluded.alive,species=excluded.species
                 """)) {
             for (var record : records) {
                 upsert.setString(1, record.uuid().toString()); upsert.setString(2, record.worldUuid().toString());
                 upsert.setDouble(3, record.homeX()); upsert.setDouble(4, record.homeY()); upsert.setDouble(5, record.homeZ());
-                upsert.setInt(6, record.alive() ? 1 : 0); upsert.addBatch();
+                upsert.setInt(6, record.alive() ? 1 : 0); upsert.setString(7, record.species().name()); upsert.addBatch();
             }
             upsert.executeBatch();
             // Removal and registration snapshots share the same serial worker; remove dead registry entries.

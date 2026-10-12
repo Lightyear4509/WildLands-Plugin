@@ -5,6 +5,7 @@ import gg.ggwp.wildlands.config.WildlifeSettings;
 import gg.ggwp.wildlands.core.*;
 import gg.ggwp.wildlands.storage.*;
 import gg.ggwp.wildlands.wildlife.behaviors.JaguarBehavior;
+import gg.ggwp.wildlands.wildlife.behaviors.PassiveBehavior;
 import gg.ggwp.wildlands.world.*;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -16,25 +17,29 @@ import org.bukkit.entity.*;
 import org.bukkit.event.*;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.world.*;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 
-/** One species, distributed server-thread decisions, chunk-persistent entities and SQLite homes. */
+/** Shared distributed work and population budgets, chunk-persistent entities and species-aware SQLite homes. */
 public final class WildlifeManager implements WildlandsModule, Listener {
     private static final NamespacedKey TAG = new NamespacedKey("ggwpwildlands", "jaguar");
+    private static final NamespacedKey SPECIES = new NamespacedKey("ggwpwildlands", "species");
     private static final NamespacedKey HOME_X = new NamespacedKey("ggwpwildlands", "jaguar_home_x");
     private static final NamespacedKey HOME_Y = new NamespacedKey("ggwpwildlands", "jaguar_home_y");
     private static final NamespacedKey HOME_Z = new NamespacedKey("ggwpwildlands", "jaguar_home_z");
     private static final class Session {
-        final Ocelot cat;
+        final Mob cat;
         final WildlifeRecord record;
         JaguarBehavior.Memory memory = JaguarBehavior.Memory.idle();
+        PassiveBehavior.Memory passive = PassiveBehavior.Memory.idle();
         UUID target, provoker;
         long lastSample, lastBite = Long.MIN_VALUE / 2;
         long lastNavigation = Long.MIN_VALUE / 2;
         Location navigationGoal;
         Location retreatGoal;
-        Session(Ocelot cat, WildlifeRecord record, long tick) { this.cat = cat; this.record = record; lastSample = tick; }
+        boolean startled;
+        Session(Mob cat, WildlifeRecord record, long tick) { this.cat = cat; this.record = record; lastSample = tick; }
     }
     private final WildlandsPlugin plugin;
     private final StorageService storage;
@@ -44,6 +49,7 @@ public final class WildlifeManager implements WildlandsModule, Listener {
     private boolean enabled;
     private long ticks;
     private int playerCursor;
+    private int speciesCursor;
     private BukkitTask sampleTask, spawnTask, retryTask;
     public WildlifeManager(WildlandsPlugin plugin, StorageService storage, List<WildlifeRecord> records) {
         this.plugin = plugin; this.storage = storage;
@@ -54,11 +60,12 @@ public final class WildlifeManager implements WildlandsModule, Listener {
     public void initialize() { plugin.getServer().getPluginManager().registerEvents(this, plugin); }
     public void configurationChanged() {
         if (!enabled) return;
-        for (var entry : new ArrayList<>(loaded.entrySet())) if (!managed(entry.getValue().cat.getWorld()) || loaded.size() > settings().maxLoaded()) {
+        for (var entry : new ArrayList<>(loaded.entrySet())) if (!managed(entry.getValue().cat.getWorld()) || !active(entry.getValue().record.species()) || loaded.size() > settings().maxLoaded()) {
             entry.getValue().cat.getPathfinder().stopPathfinding(); entry.getValue().cat.setTarget(null);
             loaded.remove(entry.getKey()); rotation.remove(entry.getKey());
             if (plugin.presentation() != null) plugin.presentation().detach(entry.getKey());
         }
+        for (Session session : loaded.values()) configure(session.cat, session.record.species());
         for (World world : plugin.getServer().getWorlds()) for (Entity entity : world.getEntities()) {
             try { adopt(entity); }
             catch (Exception failure) { plugin.report("Wildlife reconfiguration could not adopt " + entity.getUniqueId(), failure); }
@@ -84,23 +91,38 @@ public final class WildlifeManager implements WildlandsModule, Listener {
         // Bookkeeping and attack cancellation remain registered while disabled, like cauldron provenance tracking.
     }
     public static boolean tagged(Entity entity) {
-        return entity instanceof Ocelot && entity.getPersistentDataContainer().has(TAG, PersistentDataType.BYTE);
+        return species(entity).isPresent();
     }
+    public static Optional<Species> species(Entity entity) {
+        if (entity instanceof Ocelot && entity.getPersistentDataContainer().has(TAG, PersistentDataType.BYTE)) return Optional.of(Species.JAGUAR);
+        if (!(entity instanceof Pig)) return Optional.empty();
+        String value = entity.getPersistentDataContainer().get(SPECIES, PersistentDataType.STRING);
+        if (value == null) return Optional.empty();
+        try { Species species = Species.valueOf(value); return species.passive() ? Optional.of(species) : Optional.empty(); }
+        catch (IllegalArgumentException invalid) { return Optional.empty(); }
+    }
+    private boolean active(Species species) { return species == Species.JAGUAR || plugin.configuration().expansion().animal(species).enabled(); }
+    private double health(Species species) { return species == Species.JAGUAR ? settings().health() : plugin.configuration().expansion().animal(species).health(); }
     private boolean managed(World world) { return settings().worlds().contains(world.getName()) && world.getEnvironment() == World.Environment.NORMAL; }
-    private void configure(Ocelot cat) {
-        cat.setAdult(); cat.setRemoveWhenFarAway(false); cat.setPersistent(true);
-        cat.customName(Component.text("Jaguar")); cat.setCustomNameVisible(true);
+    private void configure(Mob cat, Species species) {
+        if (cat instanceof Animals animal) { animal.setAdult(); animal.setBreed(false); animal.setAgeLock(true); }
+        if (cat instanceof Pig pig) pig.setSaddle(false);
+        cat.setRemoveWhenFarAway(false); cat.setPersistent(true);
+        cat.customName(Component.text(species.displayName())); cat.setCustomNameVisible(true);
         var health = cat.getAttribute(Attribute.MAX_HEALTH);
-        if (health != null) { health.setBaseValue(settings().health()); cat.setHealth(Math.min(cat.getHealth(), settings().health())); }
+        if (health != null) { health.setBaseValue(health(species)); cat.setHealth(Math.min(cat.getHealth(), health(species))); }
         // Retain look/swim behavior but prevent vanilla avoidance and chicken targeting competing with our decisions.
         plugin.getServer().getMobGoals().removeAllGoals(cat, GoalType.MOVE);
         plugin.getServer().getMobGoals().removeAllGoals(cat, GoalType.TARGET);
         cat.setTarget(null);
+        cat.getPathfinder().setCanFloat(true);
     }
     private void adopt(Entity entity) {
         if (!enabled || !tagged(entity) || loaded.containsKey(entity.getUniqueId()) || loaded.size() >= settings().maxLoaded()
                 || !managed(entity.getWorld())) return;
-        var cat = (Ocelot) entity;
+        var cat = (Mob) entity;
+        Species species = species(cat).orElseThrow();
+        if (!active(species)) return;
         if (cat.isDead() || cat.getHealth() <= 0) {
             // Some saved chunks can contain a corpse awaiting native removal. Never recreate its home record.
             removed(cat, true); cat.remove(); return;
@@ -110,14 +132,15 @@ public final class WildlifeManager implements WildlandsModule, Listener {
             var data = cat.getPersistentDataContainer();
             Double x = data.get(HOME_X, PersistentDataType.DOUBLE), y = data.get(HOME_Y, PersistentDataType.DOUBLE), z = data.get(HOME_Z, PersistentDataType.DOUBLE);
             if (x == null || y == null || z == null) { plugin.getLogger().warning("Jaguar has missing home metadata: " + cat.getUniqueId()); return; }
-            try { record = new WildlifeRecord(cat.getUniqueId(), cat.getWorld().getUID(), x, y, z, true); }
+            try { record = new WildlifeRecord(cat.getUniqueId(), cat.getWorld().getUID(), x, y, z, true, species); }
             catch (IllegalArgumentException invalid) { plugin.report("Invalid jaguar home metadata", invalid); return; }
             known.put(record.uuid(), record); save(List.of(record));
         }
         if (!record.worldUuid().equals(cat.getWorld().getUID())) { plugin.getLogger().warning("Jaguar world identity mismatch: " + record.uuid()); return; }
-        configure(cat);
+        if (record.species() != species) { plugin.getLogger().warning("Wildlife species identity mismatch: " + record.uuid()); return; }
+        configure(cat, species);
         loaded.put(record.uuid(), new Session(cat, record, ticks)); rotation.addLast(record.uuid());
-        if (plugin.presentation() != null) plugin.presentation().attach(cat);
+        if (plugin.presentation() != null) plugin.presentation().attach(cat, species);
     }
     private void sample() {
         ticks += settings().sampleTicks();
@@ -126,9 +149,9 @@ public final class WildlifeManager implements WildlandsModule, Listener {
             UUID id = rotation.removeFirst(); Session session = loaded.get(id);
             if (session == null) continue;
             if (!session.cat.isValid() || session.cat.isDead()) { loaded.remove(id); if (plugin.presentation() != null) plugin.presentation().detach(id); continue; }
-            if (!managed(session.cat.getWorld())) { session.cat.getPathfinder().stopPathfinding(); session.cat.setTarget(null); loaded.remove(id); if (plugin.presentation() != null) plugin.presentation().detach(id); continue; }
+            if (!managed(session.cat.getWorld()) || !session.record.worldUuid().equals(session.cat.getWorld().getUID())) { session.cat.getPathfinder().stopPathfinding(); session.cat.setTarget(null); loaded.remove(id); if (plugin.presentation() != null) plugin.presentation().detach(id); continue; }
             rotation.addLast(id);
-            try { decide(session); }
+            try { if (session.record.species().passive()) decidePassive(session); else decide(session); }
             catch (Exception error) { session.cat.getPathfinder().stopPathfinding(); plugin.report("Jaguar decision failed for " + id, error); }
         }
     }
@@ -136,7 +159,7 @@ public final class WildlifeManager implements WildlandsModule, Listener {
         return player.isValid() && !player.isDead() && (player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE);
     }
     private LivingEntity target(Session session) {
-        Ocelot cat = session.cat;
+        Mob cat = session.cat;
         double range = settings().limits().detectionRange(), closest = range * range;
         LivingEntity result = null;
         if (session.provoker != null) {
@@ -160,15 +183,92 @@ public final class WildlifeManager implements WildlandsModule, Listener {
         }
         return result;
     }
-    private boolean validTarget(Ocelot cat, LivingEntity target, double rangeSquared) {
+    private boolean validTarget(Mob cat, LivingEntity target, double rangeSquared) {
         return target.isValid() && !target.isDead() && target.getWorld().equals(cat.getWorld())
                 && (!(target instanceof Player player) || eligible(player))
                 && (target instanceof Player || settings().huntPrey() && (target instanceof Chicken || target instanceof Rabbit))
                 && cat.getLocation().distanceSquared(target.getLocation()) <= rangeSquared && cat.hasLineOfSight(target);
     }
     private static boolean night(World world) { long time = world.getTime(); return time >= 13000 && time < 23000; }
+    private void decidePassive(Session session) {
+        Mob animal = session.cat; Location here = animal.getLocation();
+        Location home = new Location(animal.getWorld(), session.record.homeX(), session.record.homeY(), session.record.homeZ());
+        var rules = plugin.configuration().expansion().animal(session.record.species());
+        Player threat = null; double closest = 12 * 12;
+        for (Player player : animal.getWorld().getPlayers()) if (eligible(player)) {
+            double distance = here.distanceSquared(player.getLocation());
+            if (distance < closest && animal.hasLineOfSight(player)) { closest = distance; threat = player; }
+        }
+        Location group = null; double groupDistance = 12 * 12;
+        if (session.record.species() == Species.CAPYBARA) for (Session other : loaded.values()) {
+            if (other == session || other.record.species() != Species.CAPYBARA || !other.cat.isValid() || !other.cat.getWorld().equals(animal.getWorld())) continue;
+            double distance = here.distanceSquared(other.cat.getLocation());
+            if (distance > 9 && distance < groupDistance) { groupDistance = distance; group = other.cat.getLocation(); }
+        }
+        Location water = session.record.species() == Species.CAPYBARA ? water(here, animal.isInWater()) : null;
+        var observation = new PassiveBehavior.Observation(threat == null ? Double.POSITIVE_INFINITY : Math.sqrt(closest),
+                here.distance(home), session.startled, animal.isInWater(), group != null, water != null,
+                night(animal.getWorld()), fire(here, 3));
+        var before = session.passive.phase();
+        session.passive = PassiveBehavior.step(session.record.species(), session.passive, observation, rules,
+                Math.clamp((ticks - session.lastSample) / 20.0, .05, 10)); session.lastSample = ticks;
+        session.startled = false;
+        animal.setTarget(null);
+        if (before != session.passive.phase()) session.retreatGoal = null;
+        if (plugin.presentation() != null) {
+            var pose = switch (session.passive.phase()) {
+                case RESTING -> JaguarBehavior.Phase.IDLE;
+                case FORAGING -> JaguarBehavior.Phase.WARNING;
+                case GROUPING, SWIMMING, RETURNING -> JaguarBehavior.Phase.STALKING;
+                case RETREATING -> JaguarBehavior.Phase.RETREATING;
+            };
+            plugin.presentation().phase(session.record.uuid(), pose);
+        }
+        switch (session.passive.phase()) {
+            case RESTING -> animal.getPathfinder().stopPathfinding();
+            case RETURNING -> navigate(session, home, .9);
+            case GROUPING -> { if (group != null) navigate(session, group, .75); }
+            case SWIMMING -> { if (water != null) navigate(session, water, .8); else animal.getPathfinder().stopPathfinding(); }
+            case FORAGING -> {
+                double angle = Math.floorDiv(ticks + Math.floorMod(session.record.uuid().hashCode(), 200), 160) * 2.399;
+                navigate(session, home.clone().add(Math.cos(angle) * 6, 0, Math.sin(angle) * 6), .6);
+            }
+            case RETREATING -> {
+                if (session.retreatGoal == null) {
+                    var direction = threat == null ? here.toVector().subtract(home.toVector()) : here.toVector().subtract(threat.getLocation().toVector());
+                    direction.setY(0);
+                    if (direction.lengthSquared() < .01) direction = new org.bukkit.util.Vector(1, 0, 0);
+                    Location goal = here.clone().add(direction.normalize().multiply(8));
+                    var fromHome = goal.toVector().subtract(home.toVector()); fromHome.setY(0);
+                    if (fromHome.lengthSquared() > rules.roamRadius() * rules.roamRadius()) {
+                        fromHome.normalize().multiply(rules.roamRadius() * .9); goal = home.clone().add(fromHome);
+                    }
+                    session.retreatGoal = goal;
+                    cue(animal, "warning", Sound.ENTITY_PIG_AMBIENT);
+                }
+                navigate(session, session.retreatGoal, 1.15);
+            }
+        }
+    }
+    private static Location water(Location here) { return water(here, false); }
+    private static Location water(Location here, boolean swimming) {
+        World world = here.getWorld(); Location result = null; double best = swimming ? -1 : Double.POSITIVE_INFINITY;
+        for (int x = -4; x <= 4; x++) for (int z = -4; z <= 4; z++) {
+            int wx = here.getBlockX() + x, wz = here.getBlockZ() + z;
+            if (!world.isChunkLoaded(wx >> 4, wz >> 4)) continue;
+            for (int y = -1; y <= 0; y++) {
+                int wy = here.getBlockY() + y;
+                if (wy < world.getMinHeight() || wy + 1 >= world.getMaxHeight()) continue;
+                if (world.getBlockAt(wx, wy, wz).getType() != Material.WATER || !world.getBlockAt(wx, wy + 1, wz).isPassable()) continue;
+                double distance = x * x + z * z + y * y;
+                if (swimming && distance <= 4) continue;
+                if (swimming ? distance > best : distance < best) { best = distance; result = new Location(world, wx + .5, wy + .5, wz + .5); }
+            }
+        }
+        return result;
+    }
     private void decide(Session session) {
-        Ocelot cat = session.cat; Location here = cat.getLocation();
+        Mob cat = session.cat; Location here = cat.getLocation();
         Location home = new Location(cat.getWorld(), session.record.homeX(), session.record.homeY(), session.record.homeZ());
         LivingEntity target = target(session);
         UUID nextTarget = target == null ? null : target.getUniqueId();
@@ -222,7 +322,7 @@ public final class WildlifeManager implements WildlandsModule, Listener {
         }
     }
     private void navigate(Session session, Location destination, double speed) {
-        Ocelot cat = session.cat;
+        Mob cat = session.cat;
         long age = ticks - session.lastNavigation;
         if (age < 20 || age < 40 && session.navigationGoal != null && session.navigationGoal.distanceSquared(destination) < 16) return;
         Location here = cat.getLocation();
@@ -250,23 +350,28 @@ public final class WildlifeManager implements WildlandsModule, Listener {
         return false;
     }
     public Optional<UUID> spawn(Location location) {
+        return spawn(location, Species.JAGUAR);
+    }
+    public Optional<UUID> spawn(Location location, Species species) {
         World world = location.getWorld();
-        if (!enabled || world == null || !managed(world) || loaded.size() >= settings().maxLoaded()
+        if (!enabled || !active(species) || world == null || !managed(world) || loaded.size() >= settings().maxLoaded()
                 || !world.getWorldBorder().isInside(location)
                 || !world.isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4)
                 || location.getY() <= world.getMinHeight() || location.getY() >= world.getMaxHeight() - 2) return Optional.empty();
-        long count = known.values().stream().filter(record -> record.worldUuid().equals(world.getUID())).count();
-        long cell = HabitatManager.cell(location.getBlockX(), location.getBlockZ());
-        if (count >= settings().maxPerWorld() || known.values().stream().anyMatch(record -> record.worldUuid().equals(world.getUID())
-                && HabitatManager.cell((int) Math.floor(record.homeX()), (int) Math.floor(record.homeZ())) == cell)) return Optional.empty();
+        int speciesCap = species == Species.JAGUAR ? settings().maxPerWorld() : plugin.configuration().expansion().animal(species).maxPerWorld();
+        int cellCap = species == Species.JAGUAR ? 1 : plugin.configuration().expansion().animal(species).maxPerCell();
+        if (!PopulationRules.permits(known.values(), world.getUID(), species, location.getBlockX(), location.getBlockZ(), settings().maxPerWorld(), speciesCap, cellCap)) return Optional.empty();
         if (!world.getBlockAt(location.getBlockX(), location.getBlockY() - 1, location.getBlockZ()).getType().isSolid()
                 || !location.getBlock().isPassable() || location.getBlock().isLiquid()
                 || !world.getBlockAt(location.getBlockX(), location.getBlockY() + 1, location.getBlockZ()).isPassable()) return Optional.empty();
         if (fire(location, (int) Math.ceil(settings().fireRadius()))) return Optional.empty();
-        Ocelot cat = world.spawn(location, Ocelot.class, CreatureSpawnEvent.SpawnReason.CUSTOM, animal -> {
-            var data = animal.getPersistentDataContainer(); data.set(TAG, PersistentDataType.BYTE, (byte) 1);
+        Class<? extends Mob> base = species == Species.JAGUAR ? Ocelot.class : Pig.class;
+        Mob cat = world.spawn(location, base, CreatureSpawnEvent.SpawnReason.CUSTOM, animal -> {
+            var data = animal.getPersistentDataContainer();
+            if (species == Species.JAGUAR) data.set(TAG, PersistentDataType.BYTE, (byte) 1);
+            else data.set(SPECIES, PersistentDataType.STRING, species.name());
             data.set(HOME_X, PersistentDataType.DOUBLE, location.getX()); data.set(HOME_Y, PersistentDataType.DOUBLE, location.getY()); data.set(HOME_Z, PersistentDataType.DOUBLE, location.getZ());
-            configure(animal); animal.setHealth(settings().health());
+            configure(animal, species); animal.setHealth(health(species));
         });
         if (!cat.isValid() || cat.isDead()) return Optional.empty(); // Respect other plugins cancelling CreatureSpawnEvent.
         adopt(cat); return Optional.of(cat.getUniqueId());
@@ -280,14 +385,24 @@ public final class WildlifeManager implements WildlandsModule, Listener {
         if (!(world.getGenerator() instanceof WorldGenerator generator)) return; // Initial species uses generated rainforest habitats.
         var terrain = new TerrainModel(world.getSeed(), generator.settings().seaLevel(), world.getMinHeight(), world.getMaxHeight());
         var random = ThreadLocalRandom.current();
+        var candidates = Arrays.stream(Species.values()).filter(this::active).toList();
+        Species species = candidates.get(Math.floorMod(speciesCursor++, candidates.size()));
+        double chance = species == Species.JAGUAR ? settings().spawnChance() : plugin.configuration().expansion().animal(species).spawnChance();
         for (int attempt = 0; attempt < 4; attempt++) {
-            if (random.nextDouble() >= settings().spawnChance()) continue;
+            if (random.nextDouble() >= chance) continue;
             double angle = random.nextDouble(Math.PI * 2), distance = random.nextDouble(32, 49);
             int x = player.getLocation().getBlockX() + (int) (Math.cos(angle) * distance), z = player.getLocation().getBlockZ() + (int) (Math.sin(angle) * distance);
             if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
             var column = terrain.column(x, z);
-            if (!column.submerged() && HabitatManager.jaguar(column.region())
-                    && spawn(new Location(world, x + .5, column.groundY() + 1, z + .5)).isPresent()) return;
+            if (!column.submerged() && HabitatManager.accepts(species, column.region())) {
+                var at = new Location(world, x + .5, column.groundY() + 1, z + .5);
+                if (species == Species.CAPYBARA && water(at) == null) continue;
+                if (spawn(at, species).isPresent()) {
+                    // Small, bounded herd; each member must independently pass loaded-terrain/population checks.
+                    if (species == Species.CAPYBARA) for (int member = 1; member <= 2; member++) spawn(at.clone().add(member * 2, 0, 0), species);
+                    return;
+                }
+            }
         }
     }
     private void save(Collection<WildlifeRecord> records) {
@@ -303,13 +418,17 @@ public final class WildlifeManager implements WildlandsModule, Listener {
     @EventHandler public void entitiesLoad(EntitiesLoadEvent event) { event.getEntities().forEach(this::adopt); }
     @EventHandler public void entitiesUnload(EntitiesUnloadEvent event) { event.getEntities().forEach(entity -> removed(entity, false)); }
     @EventHandler(priority = EventPriority.MONITOR) public void death(EntityDeathEvent event) {
-        if (tagged(event.getEntity())) cue((Ocelot) event.getEntity(), "death", Sound.ENTITY_CAT_DEATH);
+        if (tagged(event.getEntity())) cue((Mob) event.getEntity(), "death", species(event.getEntity()).orElseThrow() == Species.JAGUAR ? Sound.ENTITY_CAT_DEATH : Sound.ENTITY_PIG_DEATH);
         removed(event.getEntity(), true);
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true) public void hurt(EntityDamageEvent event) {
-        if (tagged(event.getEntity()) && event.getFinalDamage() > 0) cue((Ocelot) event.getEntity(), "hurt", Sound.ENTITY_CAT_HURT);
+        if (tagged(event.getEntity()) && event.getFinalDamage() > 0) {
+            var session = loaded.get(event.getEntity().getUniqueId());
+            if (session != null && session.record.species().passive()) session.startled = true;
+            cue((Mob) event.getEntity(), "hurt", species(event.getEntity()).orElseThrow() == Species.JAGUAR ? Sound.ENTITY_CAT_HURT : Sound.ENTITY_PIG_HURT);
+        }
     }
-    private void cue(Ocelot cat, String cue, Sound fallback) {
+    private void cue(Mob cat, String cue, Sound fallback) {
         if (plugin.presentation() != null) plugin.presentation().sound(cat.getUniqueId(), cue, fallback);
         else cat.getWorld().playSound(cat.getLocation(), fallback, .7f, .7f);
     }
@@ -318,7 +437,7 @@ public final class WildlifeManager implements WildlandsModule, Listener {
     public void damage(EntityDamageByEntityEvent event) {
         if (tagged(event.getDamager())) {
             var session = loaded.get(event.getDamager().getUniqueId());
-            if (!enabled || session == null || session.memory.phase() != JaguarBehavior.Phase.ATTACKING
+            if (!enabled || session == null || session.record.species().passive() || session.memory.phase() != JaguarBehavior.Phase.ATTACKING
                     || !event.getEntity().getUniqueId().equals(session.target)) event.setCancelled(true);
         }
         if (enabled && tagged(event.getEntity()) && event.getDamager() instanceof Player player && eligible(player)) {
@@ -326,10 +445,15 @@ public final class WildlifeManager implements WildlandsModule, Listener {
         }
     }
     @EventHandler(ignoreCancelled = true) public void portal(EntityPortalEvent event) { if (tagged(event.getEntity())) event.setCancelled(true); }
+    @EventHandler(ignoreCancelled = true) public void interact(PlayerInteractEntityEvent event) {
+        if (event.getRightClicked() instanceof Pig && tagged(event.getRightClicked())) event.setCancelled(true);
+    }
+    @EventHandler(ignoreCancelled = true) public void breed(EntityBreedEvent event) { if (tagged(event.getMother()) || tagged(event.getFather())) event.setCancelled(true); }
+    @EventHandler(ignoreCancelled = true) public void transform(EntityTransformEvent event) { if (tagged(event.getEntity())) event.setCancelled(true); }
     public List<String> diagnostics() {
         var result = new ArrayList<String>(); result.add("Wildlife: " + (enabled ? "enabled" : "disabled") + "; registered=" + known.size() + "; loaded=" + loaded.size());
         loaded.values().stream().limit(16).forEach(session -> result.add(session.record.uuid() + " " + session.cat.getWorld().getName()
-                + " " + session.memory.phase() + " home=" + Math.round(session.record.homeX()) + "," + Math.round(session.record.homeY()) + "," + Math.round(session.record.homeZ())));
+                + " " + session.record.species() + " " + (session.record.species().passive() ? session.passive.phase() : session.memory.phase()) + " home=" + Math.round(session.record.homeX()) + "," + Math.round(session.record.homeY()) + "," + Math.round(session.record.homeZ())));
         return List.copyOf(result);
     }
 }

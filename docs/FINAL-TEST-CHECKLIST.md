@@ -66,4 +66,6 @@ Reconnect, cross worlds, move out of tracking range, unload/reload a chunk, kill
 
 ## Finish
 
+Before declaring the expanded wildlife goal live-ready, follow the current roster in WILDLIFE-EXPANSION.md: test all species' idle/movement/behavior/sounds, mixed packed/unpacked viewers, each native fallback and shared hitboxes. Observe Capybara swimming/gathering and Tapir day/night rest/foraging and shy retreat; confirm no crop destruction, breeding/saddle exploit, unlimited chase or healing after restart. Recheck the collective population cap and low-end visual preset with the final roster. Newly added species must receive equivalent entries; these client checks are not marked passed by native probes.
+
 Stop normally, back up the plugin data and entire shared world directory together, and retain the version/result sheet. Restore temporary settings/operator status and remove any test probes. A failed client check remains open until reproduced, fixed and retested on the affected edition.

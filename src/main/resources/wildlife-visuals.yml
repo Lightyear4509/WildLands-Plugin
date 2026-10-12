@@ -1,7 +1,12 @@
 schema-version: 1
 # Prototype is opt-in. Gameplay and named vanilla animals work without packs.
 enabled: false
-max-animals: 32
+max-animals: 12
+# Low-end defaults: no more than 84 model bones plus 12 interaction proxies.
+animation-ticks: 6
+view-distance: 32
+# Set false for static models; native server gameplay remains identical.
+animate: true
 java:
   # Host the generated Java ZIP over HTTPS; copy its SHA-1 from the build.
   url: ''

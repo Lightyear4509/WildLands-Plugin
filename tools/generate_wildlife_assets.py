@@ -8,6 +8,7 @@ import json
 import math
 import random
 import shutil
+import zlib
 import numpy as np
 import soundfile as sf
 from PIL import Image, ImageDraw
@@ -128,5 +129,107 @@ def export():
     write(BEDROCK / "sounds/sound_definitions.json", {"format_version": "1.14.0", "sound_definitions": bedrock_sounds})
 
 
+def export_passive(species, palette, frequency, profile):
+    """Each species has authored dimensions/texture and its own sound synthesis."""
+    texture = Image.new("RGB", (64, 64), tuple(palette))
+    rng = random.Random(4509 + int(frequency))
+    for y in range(64):
+        for x in range(64):
+            shade = rng.randrange(-10, 11)
+            texture.putpixel((x, y), tuple(max(0, min(255, channel+shade)) for channel in palette))
+    texture.putpixel((63, 63), (18, 16, 12))
+    path = JAVA / f"assets/{NS}/textures/entity/{species}.png"
+    texture.save(path)
+    shutil.copyfile(path, BEDROCK / f"textures/entity/{species}.png")
+    geometry = []
+    for name, (pivot, size) in zip(BONES, profile):
+        cubes = [([-v/2 for v in size], size, False)]
+        if name == "head":
+            for x in [-size[0]/2+.2, size[0]/2-1]:
+                cubes += [([x, .8, -size[2]/2-.1], [.8, .8, .2], True), ([x, size[1]/2-.5, -.5], [1.5, 1.5, 1.5], False)]
+            if species == "tapir": cubes.append(([-1.25, -2, -size[2]/2-2.5], [2.5, 2.5, 3], False))
+        elements, bedrock_cubes = [], []
+        for origin, dimensions, accent in cubes:
+            directions = ["north", "south", "east", "west", "up", "down"]
+            faces = {face: {"uv": [15.75, 15.75, 16, 16] if accent else [0, 0, 16, 16], "texture": "#fur"} for face in directions}
+            elements.append({"from": [8+v for v in origin], "to": [8+origin[i]+dimensions[i] for i in range(3)], "faces": faces})
+            uv = {face: {"uv": [63, 63], "uv_size": [1, 1]} for face in directions} if accent else [0, 0]
+            bedrock_cubes.append({"origin": [pivot[i]+origin[i] for i in range(3)], "size": dimensions, "uv": uv})
+        write(JAVA / f"assets/{NS}/models/{species}/{name}.json", {"textures": {"fur": f"{NS}:entity/{species}"}, "elements": elements})
+        write(JAVA / f"assets/{NS}/items/{species}/{name}.json", {"model": {"type": "minecraft:model", "model": f"{NS}:{species}/{name}"}})
+        geometry.append({"name": name, "pivot": pivot, "cubes": bedrock_cubes})
+    def clone(relative):
+        return json.loads((BEDROCK / relative).read_text(encoding="utf-8").replace("jaguar", species))
+    model = clone("models/entity/jaguar.geo.json")
+    model["minecraft:geometry"][0]["bones"] = geometry
+    write(BEDROCK / f"models/entity/{species}.geo.json", model)
+    animations = clone("animations/jaguar.animation.json")
+    animations["animations"][f"animation.{NS}.{species}.stalk"]["bones"] = {}
+    animations["animations"][f"animation.{NS}.{species}.idle"]["bones"] = {"head": {"rotation": ["math.sin(query.life_time*40)*2", 0, 0]}}
+    animations["animations"][f"animation.{NS}.{species}.swim"] = {"loop": True, "bones": {name: {"rotation": ["math.sin(query.life_time*320)*12", 0, 0]} for name in list(BONES)[2:6]}}
+    write(BEDROCK / f"animations/{species}.animation.json", animations)
+    entity = clone("entity/jaguar.entity.json")
+    definition = entity["minecraft:client_entity"]["description"]
+    definition["animations"]["swim"] = f"animation.{NS}.{species}.swim"
+    definition["scripts"]["animate"].append({"swim": "query.is_in_water"})
+    definition["scripts"]["animate"][1]["walk"] = "query.modified_move_speed > 0.01 && !query.is_in_water"
+    write(BEDROCK / f"entity/{species}.entity.json", entity)
+    write(BEDROCK / f"render_controllers/{species}.render_controllers.json", clone("render_controllers/jaguar.render_controllers.json"))
+    java_sounds = json.loads((JAVA / f"assets/{NS}/sounds.json").read_text())
+    bedrock_sounds = json.loads((BEDROCK / "sounds/sound_definitions.json").read_text())
+    for cue, multiplier, duration in [("idle", 1, .4), ("warning", .7, .6), ("attack", .8, .45), ("hurt", 1.35, .4), ("death", .5, .9)]:
+        t = np.arange(int(22050*duration))/22050
+        noise = np.convolve(np.random.default_rng(int(frequency*multiplier)+4509).uniform(-1, 1, len(t)), np.ones(30)/30, mode="same")
+        wave = (np.sin(2*math.pi*frequency*multiplier*t + 1.5*np.sin(2*math.pi*19*t))*.22 + noise*.15) * np.sin(math.pi*t/duration)**2
+        path = JAVA / f"assets/{NS}/sounds/{species}/{cue}.ogg"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        sf.write(path, wave, 22050, format="OGG", subtype="VORBIS")
+        target = BEDROCK / f"sounds/{species}/{cue}.ogg"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(path, target)
+        java_sounds[f"{species}.{cue}"] = {"sounds": [{"name": f"{NS}:{species}/{cue}", "stream": False}]}
+        bedrock_sounds["sound_definitions"][f"{NS}:{species}.{cue}"] = {"category": "neutral", "sounds": [f"sounds/{species}/{cue}"]}
+    write(JAVA / f"assets/{NS}/sounds.json", java_sounds)
+    write(BEDROCK / "sounds/sound_definitions.json", bedrock_sounds)
+
+
+def canonicalize_ogg(path):
+    # libsndfile randomizes Ogg stream serials. Fix serial and per-page Ogg CRC.
+    data = bytearray(path.read_bytes())
+    serial = zlib.crc32((path.parent.name + "/" + path.name).encode())
+    offset = 0
+    while offset < len(data):
+        assert data[offset:offset+4] == b"OggS"
+        segments = data[offset+26]
+        length = 27 + segments + sum(data[offset+27:offset+27+segments])
+        data[offset+14:offset+18] = serial.to_bytes(4, "little")
+        data[offset+22:offset+26] = bytes(4)
+        crc = 0
+        for value in data[offset:offset+length]:
+            crc ^= value << 24
+            for _ in range(8): crc = ((crc << 1) ^ (0x04C11DB7 if crc & 0x80000000 else 0)) & 0xFFFFFFFF
+        data[offset+22:offset+26] = crc.to_bytes(4, "little")
+        offset += length
+    path.write_bytes(data)
+
+
 if __name__ == "__main__":
     export()
+    export_passive("capybara", [139, 103, 65], 255, [
+        ([0, 8, 0], [10, 8, 14]), ([0, 8.8, -8], [8, 6, 7]),
+        ([4, 2.24, -4.8], [3, 4.48, 3]), ([-4, 2.24, -4.8], [3, 4.48, 3]),
+        ([4, 2.24, 4.8], [3, 4.48, 3]), ([-4, 2.24, 4.8], [3, 4.48, 3]), ([0, 8, 7.52], [.4, .4, .4])])
+    export_passive("tapir", [85, 64, 54], 460, [
+        ([0, 9.6, 0], [12, 10, 19]), ([0, 9.92, -10.24], [7, 7, 8]),
+        ([4.48, 3.2, -5.6], [3.5, 6.4, 3.5]), ([-4.48, 3.2, -5.6], [3.5, 6.4, 3.5]),
+        ([4.48, 3.2, 6.4], [3.5, 6.4, 3.5]), ([-4.48, 3.2, 6.4], [3.5, 6.4, 3.5]), ([0, 9.6, 10.24], [1, 1, 2])])
+    for root in [JAVA, BEDROCK]:
+        for sound in root.rglob("*.ogg"): canonicalize_ogg(sound)
+    manifest = json.loads((BEDROCK / "manifest.json").read_text())
+    manifest["header"]["name"] = "GGWP Wildlands Wildlife"
+    manifest["header"]["description"] = "Jaguar, Capybara and Tapir; gameplay stays on Paper"
+    manifest["header"]["version"] = manifest["modules"][0]["version"] = [0, 10, 2]
+    write(BEDROCK / "manifest.json", manifest)
+    metadata = json.loads((JAVA / "pack.mcmeta").read_text())
+    metadata["pack"]["description"] = "GGWP Wildlands — Jaguar, Capybara and Tapir"
+    write(JAVA / "pack.mcmeta", metadata)

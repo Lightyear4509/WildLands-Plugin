@@ -30,6 +30,66 @@
       "sounds": [
         "sounds/jaguar/death"
       ]
+    },
+    "ggwpwildlands:capybara.idle": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/capybara/idle"
+      ]
+    },
+    "ggwpwildlands:capybara.warning": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/capybara/warning"
+      ]
+    },
+    "ggwpwildlands:capybara.attack": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/capybara/attack"
+      ]
+    },
+    "ggwpwildlands:capybara.hurt": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/capybara/hurt"
+      ]
+    },
+    "ggwpwildlands:capybara.death": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/capybara/death"
+      ]
+    },
+    "ggwpwildlands:tapir.idle": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/tapir/idle"
+      ]
+    },
+    "ggwpwildlands:tapir.warning": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/tapir/warning"
+      ]
+    },
+    "ggwpwildlands:tapir.attack": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/tapir/attack"
+      ]
+    },
+    "ggwpwildlands:tapir.hurt": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/tapir/hurt"
+      ]
+    },
+    "ggwpwildlands:tapir.death": {
+      "category": "neutral",
+      "sounds": [
+        "sounds/tapir/death"
+      ]
     }
   }
 }

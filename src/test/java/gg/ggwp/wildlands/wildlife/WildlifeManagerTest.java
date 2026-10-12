@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import org.bukkit.*;
 import org.bukkit.entity.Ocelot;
+import org.bukkit.entity.Pig;
 import org.bukkit.event.entity.*;
 import org.bukkit.persistence.*;
 import org.bukkit.plugin.PluginManager;
@@ -75,5 +76,15 @@ class WildlifeManagerTest {
         assertTrue(manager.diagnostics().getFirst().contains("registered=0; loaded=0"));
         @SuppressWarnings("rawtypes") var work = ArgumentCaptor.forClass(StorageService.Work.class);
         verify(storage).submit(work.capture()); work.getValue().run(); verify(storage).saveWildlife(List.of(record.dead()));
+    }
+    @Test void passiveOwnershipIsSpeciesTaggedAndNativePigDamageIsAlwaysCancelled() {
+        var pig = mock(Pig.class); var data = mock(PersistentDataContainer.class); when(pig.getPersistentDataContainer()).thenReturn(data);
+        assertFalse(WildlifeManager.tagged(pig));
+        when(data.get(any(NamespacedKey.class), eq(PersistentDataType.STRING))).thenReturn("CAPYBARA");
+        assertEquals(Optional.of(Species.CAPYBARA), WildlifeManager.species(pig));
+        var manager = new WildlifeManager(plugin, storage, List.of());
+        var event = mock(EntityDamageByEntityEvent.class); when(event.getDamager()).thenReturn(pig); manager.damage(event);
+        verify(event).setCancelled(true);
+        when(data.get(any(NamespacedKey.class), eq(PersistentDataType.STRING))).thenReturn("UNSUPPORTED"); assertFalse(WildlifeManager.tagged(pig));
     }
 }

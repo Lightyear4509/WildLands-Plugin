@@ -136,6 +136,8 @@ public final class WildlandsPlugin extends JavaPlugin {
                     throw new IllegalArgumentException("Discovery sampling changes require a server restart; no settings changed");
                 if (!candidate.visuals().javaUrl().equals(config.visuals().javaUrl()) || !candidate.visuals().javaSha1().equals(config.visuals().javaSha1()))
                     throw new IllegalArgumentException("Wildlife pack delivery changes require a server restart; no settings changed");
+                if (candidate.visuals().animationTicks() != config.visuals().animationTicks())
+                    throw new IllegalArgumentException("Wildlife animation interval changes require a server restart; no settings changed");
                 var previous = config;
                 config = candidate;
                 try {

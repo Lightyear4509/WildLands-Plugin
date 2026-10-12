@@ -1,0 +1,75 @@
+{
+  "textures": {
+    "fur": "ggwpwildlands:entity/tapir"
+  },
+  "elements": [
+    {
+      "from": [
+        2.0,
+        3.0,
+        -1.5
+      ],
+      "to": [
+        14.0,
+        13.0,
+        17.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        }
+      }
+    }
+  ]
+}

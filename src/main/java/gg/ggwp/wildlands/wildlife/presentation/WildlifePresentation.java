@@ -2,6 +2,7 @@ package gg.ggwp.wildlands.wildlife.presentation;
 
 import gg.ggwp.wildlands.core.WildlandsPlugin;
 import gg.ggwp.wildlands.wildlife.behaviors.JaguarBehavior.Phase;
+import gg.ggwp.wildlands.wildlife.Species;
 import java.util.*;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
@@ -24,14 +25,16 @@ public final class WildlifePresentation implements Listener {
     private static final String[] BONES = {"body", "head", "front_left", "front_right", "rear_left", "rear_right", "tail"};
     private static final float[][] OFFSETS = {{0,.55f,0},{0,.65f,-.65f},{.22f,.2f,-.4f},{-.22f,.2f,-.4f},{.22f,.2f,.4f},{-.22f,.2f,.4f},{0,.55f,.875f}};
     private static final class View {
-        final Ocelot animal;
+        final Mob animal;
+        final Species species;
         Phase phase = Phase.IDLE;
         Location previous;
         final List<ItemDisplay> bones = new ArrayList<>();
+        final List<Transformation> transforms = new ArrayList<>();
         Interaction hitbox;
         final Set<UUID> hiddenFrom = new HashSet<>();
         long lastSound = Long.MIN_VALUE / 2;
-        View(Ocelot animal) { this.animal = animal; previous = animal.getLocation(); }
+        View(Mob animal, Species species) { this.animal = animal; this.species = species; previous = animal.getLocation(); }
     }
     private final WildlandsPlugin plugin;
     private final java.util.function.ToDoubleFunction<Player> attackReach;
@@ -53,7 +56,8 @@ public final class WildlifePresentation implements Listener {
         if (task != null) return;
         // Remove legacy temporary entities after a crash; they never contain gameplay inventory/state.
         for (World world : plugin.getServer().getWorlds()) world.getEntities().stream().filter(WildlifePresentation::temporary).forEach(Entity::remove);
-        task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::sample, 4, 4);
+        int interval = plugin.configuration().visuals().animationTicks();
+        task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::sample, interval, interval);
     }
     public void disable() {
         if (task != null) task.cancel(); task = null;
@@ -65,8 +69,11 @@ public final class WildlifePresentation implements Listener {
         javaReady.clear(); javaRequested.clear(); bedrockReady.clear(); PresentationRegistry.clear();
     }
     public void attach(Ocelot animal) {
-        animals.putIfAbsent(animal.getUniqueId(), new View(animal));
-        if (plugin.configuration().visuals().enabled()) PresentationRegistry.publish(animal.getUniqueId(), 0);
+        attach(animal, Species.JAGUAR);
+    }
+    public void attach(Mob animal, Species species) {
+        animals.putIfAbsent(animal.getUniqueId(), new View(animal, species));
+        if (plugin.configuration().visuals().enabled()) PresentationRegistry.publish(animal.getUniqueId(), 0, species);
     }
     public void configurationChanged() {
         if (!plugin.configuration().visuals().enabled()) {
@@ -75,7 +82,7 @@ public final class WildlifePresentation implements Listener {
                 Player player = plugin.getServer().getPlayer(id); if (player != null) refresh(player);
             }
             javaReady.clear(); javaRequested.clear(); bedrockReady.clear(); PresentationRegistry.clear(); animals.values().forEach(this::clearDisplays);
-        } else animals.forEach((id, view) -> PresentationRegistry.publish(id, view.phase.ordinal()));
+        } else animals.forEach((id, view) -> PresentationRegistry.publish(id, view.phase.ordinal(), view.species));
     }
     public void detach(UUID id) {
         View view = animals.remove(id); if (view != null) clearDisplays(view);
@@ -84,7 +91,7 @@ public final class WildlifePresentation implements Listener {
     public void phase(UUID id, Phase phase) {
         View view = animals.get(id); if (view == null) return;
         view.phase = phase;
-        if (plugin.configuration().visuals().enabled()) PresentationRegistry.publish(id, phase.ordinal());
+        if (plugin.configuration().visuals().enabled()) PresentationRegistry.publish(id, phase.ordinal(), view.species);
         else PresentationRegistry.remove(id);
         updateBedrock(id, phase.ordinal());
     }
@@ -103,13 +110,13 @@ public final class WildlifePresentation implements Listener {
                     return "Wildlands Bedrock pack is missing, declined or not yet loaded; named vanilla wildlife remains visible.";
             } catch (ReflectiveOperationException | LinkageError unavailable) { return "Bedrock pack detection unavailable; using named vanilla wildlife."; }
             bedrockReady.add(player.getUniqueId()); PresentationRegistry.viewer(player.getUniqueId(), true);
-            refresh(player); return "Bedrock Jaguar models enabled. Use /wildlands visuals off for vanilla presentation.";
+            refresh(player); return "Bedrock wildlife models enabled. Use /wildlands visuals off for vanilla presentation.";
         }
         var settings = plugin.configuration().visuals();
         if (settings.javaUrl().isEmpty()) return "Administrator must configure the Java pack HTTPS URL and SHA-1 first.";
         javaRequested.add(player.getUniqueId());
-        player.addResourcePack(PACK_ID, settings.javaUrl(), HexFormat.of().parseHex(settings.javaSha1()), "Optional Wildlands Jaguar models", false);
-        return "Optional Jaguar pack offered. Models activate only after this pack loads successfully.";
+        player.addResourcePack(PACK_ID, settings.javaUrl(), HexFormat.of().parseHex(settings.javaSha1()), "Optional Wildlands wildlife models", false);
+        return "Optional wildlife pack offered. Models activate only after this pack loads successfully.";
     }
     private Object bridge() {
         var geyser = plugin.getServer().getPluginManager().getPlugin("Geyser-Spigot");
@@ -150,19 +157,20 @@ public final class WildlifePresentation implements Listener {
         }
     }
     private void sample() {
-        ticks += 4;
+        ticks += plugin.configuration().visuals().animationTicks();
         int modeled = 0;
         for (View view : new ArrayList<>(animals.values())) {
             if (!view.animal.isValid() || view.animal.isDead()) { detach(view.animal.getUniqueId()); continue; }
             var settings = plugin.configuration().visuals();
             Location here = view.animal.getLocation();
             here.setPitch(0);
-            if (Math.floorMod(ticks + view.animal.getUniqueId().hashCode(), 600) < 4) sound(view.animal.getUniqueId(), "idle", Sound.ENTITY_CAT_AMBIENT);
+            if (Math.floorMod(ticks + view.animal.getUniqueId().hashCode(), 600) < settings.animationTicks()) sound(view.animal.getUniqueId(), "idle", view.species == Species.JAGUAR ? Sound.ENTITY_CAT_AMBIENT : Sound.ENTITY_PIG_AMBIENT);
             List<Player> viewers = settings.enabled() ? view.animal.getWorld().getPlayers().stream()
-                    .filter(player -> javaReady.contains(player.getUniqueId()) && here.distanceSquared(player.getLocation()) < 64 * 64).toList() : List.of();
+                    .filter(player -> javaReady.contains(player.getUniqueId()) && here.distanceSquared(player.getLocation()) < settings.viewDistance() * settings.viewDistance()).toList() : List.of();
             if (viewers.isEmpty() || modeled++ >= settings.maxAnimals()) { clearDisplays(view); continue; }
             try {
-                if (view.bones.isEmpty()) createDisplays(view);
+                boolean created = view.bones.isEmpty();
+                if (created) createDisplays(view);
                 Set<UUID> visible = new HashSet<>(); viewers.forEach(player -> visible.add(player.getUniqueId()));
                 for (UUID id : Set.copyOf(view.hiddenFrom)) if (!visible.contains(id)) {
                     Player player = plugin.getServer().getPlayer(id); if (player != null) {
@@ -174,17 +182,20 @@ public final class WildlifePresentation implements Listener {
                     view.bones.forEach(bone -> player.showEntity(plugin, bone)); player.showEntity(plugin, view.hitbox); player.hideEntity(plugin, view.animal);
                 }
                 boolean moving = here.distanceSquared(view.previous) > .0004;
+                boolean animate = settings.animate() && viewers.stream().anyMatch(player -> here.distanceSquared(player.getLocation()) < 16 * 16);
+                boolean relocate = created || moving || Math.abs(here.getYaw() - view.previous.getYaw()) > 1;
                 for (int index = 0; index < view.bones.size(); index++) {
-                    ItemDisplay bone = view.bones.get(index); bone.teleport(here);
-                    float[] offset = OFFSETS[index];
-                    float angle = index >= 2 && index <= 5 ? JaguarAnimation.leg(view.phase, ticks / 20.0, moving, index - 2)
+                    ItemDisplay bone = view.bones.get(index); if (relocate) bone.teleport(here);
+                    float[] offset = offsets(view.species)[index];
+                    float angle = index >= 2 && index <= 5 ? JaguarAnimation.leg(view.phase, ticks / 20.0, moving && animate, index - 2)
                             : index == 1 && view.phase == Phase.WARNING ? -.2f : 0;
                     Quaternionf rotation = new Quaternionf().rotateX(angle);
-                    if (index == 6) rotation.rotateY((float) Math.sin(ticks / 20.0 * 1.6) * .1f);
-                    bone.setTransformation(new Transformation(new Vector3f(offset[0], offset[1] + JaguarAnimation.crouch(view.phase), offset[2]),
-                            rotation, new Vector3f(1), new Quaternionf()));
+                    if (index == 6 && view.species == Species.JAGUAR && animate) rotation.rotateY((float) Math.sin(ticks / 20.0 * 1.6) * .1f);
+                    Transformation transform = new Transformation(new Vector3f(offset[0], offset[1] + (view.species == Species.JAGUAR ? JaguarAnimation.crouch(view.phase) : 0), offset[2]),
+                            rotation, new Vector3f(1), new Quaternionf());
+                    if (!transform.equals(view.transforms.get(index))) { bone.setTransformation(transform); view.transforms.set(index, transform); }
                 }
-                view.hitbox.teleport(here); view.previous = here;
+                if (relocate) view.hitbox.teleport(here); view.previous = here;
             } catch (RuntimeException failure) { clearDisplays(view); plugin.report("Jaguar presentation failed; native animal restored", failure); }
         }
     }
@@ -192,17 +203,20 @@ public final class WildlifePresentation implements Listener {
         try {
             for (String name : BONES) {
                 ItemDisplay display = view.animal.getWorld().spawn(view.animal.getLocation(), ItemDisplay.class, entity -> {
-                    markTemporary(entity); entity.setVisibleByDefault(false); entity.setInterpolationDuration(4); entity.setTeleportDuration(4);
-                    entity.setViewRange(1); entity.setShadowRadius(.4f); entity.setDisplayWidth(2); entity.setDisplayHeight(2);
+                    markTemporary(entity); entity.setVisibleByDefault(false); entity.setInterpolationDuration(plugin.configuration().visuals().animationTicks()); entity.setTeleportDuration(plugin.configuration().visuals().animationTicks());
+                    entity.setViewRange(1); entity.setShadowRadius(name.equals("body") ? .4f : 0); entity.setDisplayWidth(2); entity.setDisplayHeight(2);
                     var item = new ItemStack(Material.PAPER); var meta = item.getItemMeta();
-                    meta.setItemModel(new NamespacedKey("ggwpwildlands", "jaguar/" + name)); item.setItemMeta(meta);
+                    meta.setItemModel(new NamespacedKey("ggwpwildlands", view.species.key() + "/" + name)); item.setItemMeta(meta);
                     entity.setItemStack(item); entity.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.NONE);
-                }); view.bones.add(display);
+                });
+                if (!display.isValid()) { display.remove(); throw new IllegalStateException("Wildlife display spawn was cancelled"); }
+                view.bones.add(display); view.transforms.add(null);
             }
             view.hitbox = view.animal.getWorld().spawn(view.animal.getLocation(), Interaction.class, entity -> {
                 markTemporary(entity); entity.setVisibleByDefault(false); entity.setInteractionWidth((float) view.animal.getWidth());
                 entity.setInteractionHeight((float) view.animal.getHeight()); entity.setResponsive(true);
             });
+            if (!view.hitbox.isValid()) throw new IllegalStateException("Wildlife hitbox spawn was cancelled");
             proxies.put(view.hitbox.getUniqueId(), view.animal.getUniqueId());
         } catch (RuntimeException failure) { clearDisplays(view); throw failure; }
     }
@@ -210,7 +224,7 @@ public final class WildlifePresentation implements Listener {
     private static boolean temporary(Entity entity) { return entity.getPersistentDataContainer().has(TEMP, PersistentDataType.BYTE); }
     private void clearDisplays(View view) {
         for (UUID id : view.hiddenFrom) { Player player = plugin.getServer().getPlayer(id); if (player != null) player.showEntity(plugin, view.animal); }
-        view.hiddenFrom.clear(); view.bones.forEach(Entity::remove); view.bones.clear();
+        view.hiddenFrom.clear(); view.bones.forEach(Entity::remove); view.bones.clear(); view.transforms.clear();
         if (view.hitbox != null) { proxies.remove(view.hitbox.getUniqueId()); view.hitbox.remove(); view.hitbox = null; }
     }
     public void sound(UUID animal, String cue, Sound fallback) {
@@ -221,7 +235,7 @@ public final class WildlifePresentation implements Listener {
         view.lastSound = ticks;
         for (Player player : view.animal.getWorld().getPlayers()) if (view.animal.getLocation().distanceSquared(player.getLocation()) < 24 * 24) {
             if (javaReady.contains(player.getUniqueId()) || bedrockReady.contains(player.getUniqueId()))
-                player.playSound(view.animal.getLocation(), "ggwpwildlands:jaguar." + cue, SoundCategory.NEUTRAL, .7f, 1);
+                player.playSound(view.animal.getLocation(), "ggwpwildlands:" + view.species.key() + "." + cue, SoundCategory.NEUTRAL, .7f, 1);
             else player.playSound(view.animal.getLocation(), fallback, SoundCategory.NEUTRAL, .7f, .7f);
         }
     }
@@ -256,5 +270,8 @@ public final class WildlifePresentation implements Listener {
         PresentationRegistry.viewer(event.getPlayer().getUniqueId(), false); animals.values().forEach(view -> view.hiddenFrom.remove(event.getPlayer().getUniqueId()));
     }
     @EventHandler public void loaded(EntitiesLoadEvent event) { event.getEntities().stream().filter(WildlifePresentation::temporary).forEach(Entity::remove); }
-    public String diagnostics() { return "Jaguar visuals: animals=" + animals.size() + "; displays=" + animals.values().stream().mapToInt(v -> v.bones.size()).sum() + "; Java viewers=" + javaReady.size() + "; Bedrock viewers=" + bedrockReady.size() + "; bridge=" + (bridge() != null); }
+    private static final float[][] CAPYBARA = {{0,.5f,0},{0,.55f,-.5f},{.25f,.14f,-.3f},{-.25f,.14f,-.3f},{.25f,.14f,.3f},{-.25f,.14f,.3f},{0,.5f,.47f}};
+    private static final float[][] TAPIR = {{0,.6f,0},{0,.62f,-.64f},{.28f,.2f,-.35f},{-.28f,.2f,-.35f},{.28f,.2f,.4f},{-.28f,.2f,.4f},{0,.6f,.64f}};
+    private static float[][] offsets(Species species) { return switch (species) { case JAGUAR -> OFFSETS; case CAPYBARA -> CAPYBARA; case TAPIR -> TAPIR; }; }
+    public String diagnostics() { return "Wildlife visuals: animals=" + animals.size() + "; displays=" + animals.values().stream().mapToInt(v -> v.bones.size()).sum() + "; Java viewers=" + javaReady.size() + "; Bedrock viewers=" + bedrockReady.size() + "; bridge=" + (bridge() != null); }
 }

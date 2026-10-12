@@ -1,0 +1,52 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ggwpwildlands:tapir",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/tapir"
+      },
+      "geometry": {
+        "default": "geometry.ggwpwildlands.tapir"
+      },
+      "animations": {
+        "idle": "animation.ggwpwildlands.tapir.idle",
+        "walk": "animation.ggwpwildlands.tapir.walk",
+        "stalk": "animation.ggwpwildlands.tapir.stalk",
+        "warning": "animation.ggwpwildlands.tapir.warning",
+        "attack": "animation.ggwpwildlands.tapir.attack",
+        "death": "animation.ggwpwildlands.tapir.death",
+        "swim": "animation.ggwpwildlands.tapir.swim"
+      },
+      "scripts": {
+        "animate": [
+          "idle",
+          {
+            "walk": "query.modified_move_speed > 0.01 && !query.is_in_water"
+          },
+          {
+            "stalk": "query.property('ggwpwildlands:phase') == 1"
+          },
+          {
+            "warning": "query.property('ggwpwildlands:phase') == 2"
+          },
+          {
+            "attack": "query.property('ggwpwildlands:phase') == 3"
+          },
+          {
+            "death": "!query.is_alive"
+          },
+          {
+            "swim": "query.is_in_water"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.ggwpwildlands.tapir"
+      ]
+    }
+  }
+}

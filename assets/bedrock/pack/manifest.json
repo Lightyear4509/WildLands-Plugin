@@ -1,13 +1,13 @@
 {
   "format_version": 2,
   "header": {
-    "name": "GGWP Wildlands Jaguar Prototype",
-    "description": "Original Jaguar presentation; gameplay stays on Paper",
+    "name": "GGWP Wildlands Wildlife",
+    "description": "Jaguar, Capybara and Tapir; gameplay stays on Paper",
     "uuid": "abe98b0d-4cf4-423b-9b0f-2029a4732301",
     "version": [
       0,
       10,
-      1
+      2
     ],
     "min_engine_version": [
       1,
@@ -22,7 +22,7 @@
       "version": [
         0,
         10,
-        1
+        2
       ]
     }
   ]

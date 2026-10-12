@@ -3,7 +3,7 @@ plugins {
     id("com.gradleup.shadow") version "9.2.2"
 }
 group = "gg.ggwp.wildlands"
-version = "0.10.0-prototype.1"
+version = "0.10.0-wildlife.2"
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")

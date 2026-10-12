@@ -19,7 +19,7 @@ public final class Database implements AutoCloseable {
             try (ResultSet result = statement.executeQuery("PRAGMA user_version")) {
                 version = result.getInt(1);
             }
-            if (version > 7 || version < 0)
+            if (version > 8 || version < 0)
                 throw new SQLException("Unsupported database schema " + version + "; refusing migration");
             if (version > 0) verifyPlayers(statement);
             if (version >= 2) verifyHydration(statement);
@@ -28,6 +28,7 @@ public final class Database implements AutoCloseable {
             if (version >= 5) verifyWorlds(statement);
             if (version >= 6) verifyWildlife(statement);
             if (version >= 7) verifyExploration(statement);
+            if (version >= 8) verifySpecies(statement);
             if (version < 7) {
                 connection.setAutoCommit(false);
                 try {
@@ -130,6 +131,15 @@ public final class Database implements AutoCloseable {
                     throw failure;
                 } finally { connection.setAutoCommit(true); }
             }
+            if (version < 8) {
+                connection.setAutoCommit(false);
+                try {
+                    statement.execute("ALTER TABLE wildlife ADD COLUMN species TEXT NOT NULL DEFAULT 'JAGUAR' CHECK(length(species) BETWEEN 1 AND 32)");
+                    verifySpecies(statement);
+                    statement.execute("PRAGMA user_version=8"); connection.commit();
+                } catch (SQLException failure) { connection.rollback(); throw failure; }
+                finally { connection.setAutoCommit(true); }
+            }
             try (ResultSet ignored = statement.executeQuery(
                     "SELECT uuid,hydration,hud_enabled,dry_seconds FROM hydration_players LIMIT 0")) {
                 // Verify an existing schema before reporting startup success.
@@ -169,6 +179,9 @@ public final class Database implements AutoCloseable {
     }
     private static void verifyWildlife(Statement statement) throws SQLException {
         try (ResultSet ignored = statement.executeQuery("SELECT uuid,world_uuid,home_x,home_y,home_z,alive FROM wildlife LIMIT 0")) {}
+    }
+    private static void verifySpecies(Statement statement) throws SQLException {
+        try (ResultSet ignored = statement.executeQuery("SELECT uuid,species FROM wildlife LIMIT 0")) {}
     }
     private static void verifyExploration(Statement statement) throws SQLException {
         try (ResultSet ignored = statement.executeQuery("SELECT id,world_uuid,name,kind,x,y,z,owner_uuid FROM landmarks LIMIT 0")) {}

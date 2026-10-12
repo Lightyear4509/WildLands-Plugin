@@ -169,6 +169,9 @@ public final class WildlandsCommand implements CommandExecutor, TabCompleter {
         if (args.length == 3 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("wildlife") && sender.hasPermission(ADMIN))
             options.addAll(List.of("list", "spawn"));
         if (args.length == 4 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("wildlife") && sender.hasPermission(ADMIN))
+            { plugin.getServer().getWorlds().forEach(world -> options.add(world.getName()));
+              if (args[2].equalsIgnoreCase("spawn")) for (var species : gg.ggwp.wildlands.wildlife.Species.values()) options.add(species.key()); }
+        if (args.length == 5 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("wildlife") && args[2].equalsIgnoreCase("spawn") && sender.hasPermission(ADMIN))
             plugin.getServer().getWorlds().forEach(world -> options.add(world.getName()));
         if (args.length >= 3 && args[0].equalsIgnoreCase("admin") && args[1].equalsIgnoreCase("crafting") && sender.hasPermission(ADMIN)) {
             if (args.length == 3) options.addAll(List.of("info", "give"));

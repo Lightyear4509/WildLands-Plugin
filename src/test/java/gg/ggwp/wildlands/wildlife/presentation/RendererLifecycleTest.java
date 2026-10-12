@@ -34,13 +34,14 @@ class RendererLifecycleTest {
         when(server.getWorlds()).thenReturn(List.of(world)); when(world.getEntities()).thenReturn(List.of());
         when(plugin.crossplay()).thenReturn(mock(CrossplayService.class));
         player = mock(Player.class); cat = mock(Ocelot.class); proxy = mock(Interaction.class); displays = new ArrayList<>();
-        when(player.getUniqueId()).thenReturn(UUID.randomUUID()); when(cat.getUniqueId()).thenReturn(UUID.randomUUID()); when(proxy.getUniqueId()).thenReturn(UUID.randomUUID());
+        when(player.getUniqueId()).thenReturn(UUID.randomUUID()); when(cat.getUniqueId()).thenReturn(new UUID(0, 100)); when(proxy.getUniqueId()).thenReturn(UUID.randomUUID());
         when(player.getWorld()).thenReturn(world); when(cat.getWorld()).thenReturn(world); when(cat.isValid()).thenReturn(true);
         when(player.getLocation()).thenReturn(new Location(world, 0, 65, 2)); when(player.getEyeLocation()).thenReturn(new Location(world, 0, 66, 2));
         when(cat.getLocation()).thenReturn(new Location(world, 0, 65, 0)); when(cat.getBoundingBox()).thenReturn(new BoundingBox(-.3, 65, -.3, .3, 65.7, .3));
         when(player.hasLineOfSight(cat)).thenReturn(true); when(world.getPlayers()).thenReturn(List.of(player)); when(server.getPlayer(player.getUniqueId())).thenReturn(player);
-        when(world.spawn(any(Location.class), eq(ItemDisplay.class), org.mockito.ArgumentMatchers.<java.util.function.Consumer<? super ItemDisplay>>any())).thenAnswer(call -> { var display = mock(ItemDisplay.class); displays.add(display); return display; });
+        when(world.spawn(any(Location.class), eq(ItemDisplay.class), org.mockito.ArgumentMatchers.<java.util.function.Consumer<? super ItemDisplay>>any())).thenAnswer(call -> { var display = mock(ItemDisplay.class); when(display.isValid()).thenReturn(true); displays.add(display); return display; });
         when(world.spawn(any(Location.class), eq(Interaction.class), org.mockito.ArgumentMatchers.<java.util.function.Consumer<? super Interaction>>any())).thenReturn(proxy);
+        when(proxy.isValid()).thenReturn(true);
         var scheduler = mock(BukkitScheduler.class); when(server.getScheduler()).thenReturn(scheduler);
         when(scheduler.runTaskTimer(eq(plugin), any(Runnable.class), eq(4L), eq(4L))).thenAnswer(call -> { tick = call.getArgument(1); return mock(BukkitTask.class); });
         renderer = new WildlifePresentation(plugin, ignored -> 3); renderer.enable(); renderer.attach(cat);
@@ -76,6 +77,21 @@ class RendererLifecycleTest {
         renderer.choose(player, false); verify(player).showEntity(plugin, cat);
         tick.run(); displays.forEach(display -> verify(display).remove()); verify(proxy).remove();
     }
+    @Test void cancelledDisplaySpawnKeepsTheNativeAnimalVisible() {
+        when(world.spawn(any(Location.class), eq(ItemDisplay.class), org.mockito.ArgumentMatchers.<java.util.function.Consumer<? super ItemDisplay>>any())).thenAnswer(call -> {
+            var display = mock(ItemDisplay.class); displays.add(display); return display;
+        });
+        accept(); tick.run(); verify(player, never()).hideEntity(plugin, cat);
+        assertTrue(renderer.diagnostics().contains("displays=0")); verify(displays.getFirst()).remove();
+    }
+    @Test void standingStaticModelsDoNotSendRepeatedTransformsOrTeleports() {
+        var config = plugin.configuration();
+        when(plugin.configuration()).thenReturn(new ConfigurationManager.Snapshot(config.settings(), config.messages(), config.hydration(), config.environment(),
+                config.seasons(), config.worldgen(), config.wildlife(), config.crafting(), config.food(), config.landmarks(),
+                new VisualSettings(true, "https://example.com/wildlands.zip", "a".repeat(40), 1, 4, 32, false)));
+        accept(); tick.run(); tick.run(); tick.run();
+        for (var display : displays) { verify(display, times(1)).setTransformation(any()); verify(display, times(1)).teleport(any(Location.class)); }
+    }
     @Test void latePackSuccessAfterOffDoesNotReactivateAndOtherPacksDoNotActivate() {
         renderer.choose(player, true); renderer.choose(player, false);
         renderer.pack(new PlayerResourcePackStatusEvent(player, WildlifePresentation.PACK_ID, PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED));
@@ -89,7 +105,7 @@ class RendererLifecycleTest {
         assertTrue(renderer.diagnostics().contains("animals=0; displays=0"));
     }
     @Test void displayBudgetLimitsModelsAndOutOfRangeAttacksNeverReachAnimal() {
-        var other = mock(Ocelot.class); when(other.getUniqueId()).thenReturn(UUID.randomUUID()); when(other.getWorld()).thenReturn(world);
+        var other = mock(Ocelot.class); when(other.getUniqueId()).thenReturn(new UUID(0, 101)); when(other.getWorld()).thenReturn(world);
         when(other.isValid()).thenReturn(true); when(other.getLocation()).thenReturn(new Location(world, 2, 65, 0)); renderer.attach(other);
         accept(); tick.run(); assertEquals(7, displays.size());
         when(player.getEyeLocation()).thenReturn(new Location(world, 3.1, 68.5, 3.1));

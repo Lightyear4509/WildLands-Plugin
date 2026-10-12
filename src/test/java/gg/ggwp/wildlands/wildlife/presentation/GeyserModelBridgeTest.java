@@ -23,7 +23,7 @@ class GeyserModelBridgeTest {
             ids.when(() -> Identifier.of(anyString())).thenReturn(identifier);
             factory.when(() -> CustomEntityDefinition.of(any(Identifier.class))).thenReturn(definition);
             var bridge = new WildlandsModels(); bridge.bind(PresentationRegistry.class);
-            var define = mock(GeyserDefineEntitiesEvent.class); bridge.define(define); verify(define).register(definition);
+            var define = mock(GeyserDefineEntitiesEvent.class); bridge.define(define); verify(define, times(3)).register(definition);
             var properties = mock(GeyserDefineEntityPropertiesEvent.class);
             when(properties.registerIntegerProperty(any(), any(), eq(0), eq(4), eq(0))).thenReturn(mock(GeyserIntEntityProperty.class));
             bridge.properties(properties);
@@ -42,6 +42,38 @@ class GeyserModelBridgeTest {
             bridge.spawn(spawn); verify(spawn).definition(definition); verify(spawn).preSpawnConsumer(any());
             reset(spawn); when(spawn.entityType()).thenReturn(type); when(type.is(any(Identifier.class))).thenReturn(false);
             bridge.spawn(spawn); verify(spawn, never()).definition(any());
+        }
+    }
+    @Test void eachSpeciesUsesItsOwnDefinitionAndRejectsWrongNativeBase() throws Exception {
+        var identifiers = new java.util.HashMap<String, Identifier>();
+        var definitions = new java.util.HashMap<String, CustomEntityDefinition>();
+        try (var ids = mockStatic(Identifier.class); var factory = mockStatic(CustomEntityDefinition.class)) {
+            ids.when(() -> Identifier.of(anyString())).thenAnswer(call -> identifiers.computeIfAbsent(call.getArgument(0), key -> {
+                var id = mock(Identifier.class); when(id.path()).thenReturn(key.split(":")[1]); return id;
+            }));
+            factory.when(() -> CustomEntityDefinition.of(any(Identifier.class))).thenAnswer(call -> {
+                Identifier id = call.getArgument(0); var definition = mock(CustomEntityDefinition.class); when(definition.identifier()).thenReturn(id);
+                definitions.put(id.path(), definition); return definition;
+            });
+            var bridge = new WildlandsModels(); bridge.bind(PresentationRegistry.class);
+            var properties = mock(GeyserDefineEntityPropertiesEvent.class);
+            when(properties.registerIntegerProperty(any(), any(), eq(0), eq(4), eq(0))).thenReturn(mock(GeyserIntEntityProperty.class)); bridge.properties(properties);
+            var connection = mock(GeyserConnection.class); UUID viewer = UUID.randomUUID(); when(connection.javaUuid()).thenReturn(viewer);
+            var monitor = new gg.ggwp.wildlands.geyser.PackNegotiationMonitor(true); monitor.attach(PackNegotiationTest.connection()); monitor.observe("HAVE_ALL_PACKS"); monitor.observe("COMPLETED");
+            var packs = bridge.getClass().getDeclaredField("packs"); packs.setAccessible(true);
+            @SuppressWarnings("unchecked") var cache = (java.util.Map<GeyserConnection, gg.ggwp.wildlands.geyser.PackNegotiationMonitor>) packs.get(bridge); cache.put(connection, monitor);
+            PresentationRegistry.viewer(viewer, true);
+            for (var species : gg.ggwp.wildlands.wildlife.Species.values()) {
+                var spawn = mock(ServerSpawnEntityEvent.class); var type = mock(JavaEntityType.class); UUID animal = UUID.randomUUID();
+                when(spawn.uuid()).thenReturn(animal); when(spawn.connection()).thenReturn(connection); when(spawn.entityType()).thenReturn(type);
+                String base = species == gg.ggwp.wildlands.wildlife.Species.JAGUAR ? "minecraft:ocelot" : "minecraft:pig";
+                doAnswer(call -> call.getArgument(0).equals(identifiers.get(base))).when(type).is(any());
+                PresentationRegistry.publish(animal, 1, species); bridge.spawn(spawn); verify(spawn).definition(definitions.get(species.key()));
+                if (species.passive()) {
+                    clearInvocations(spawn); doAnswer(call -> call.getArgument(0).equals(identifiers.get("minecraft:ocelot"))).when(type).is(any());
+                    bridge.spawn(spawn); verify(spawn, never()).definition(any());
+                }
+            }
         }
     }
 }
