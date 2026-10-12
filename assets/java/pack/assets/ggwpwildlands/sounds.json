@@ -79,6 +79,14 @@
       }
     ]
   },
+  "capybara.movement": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:capybara/movement",
+        "stream": false
+      }
+    ]
+  },
   "tapir.idle": {
     "sounds": [
       {
@@ -115,6 +123,206 @@
     "sounds": [
       {
         "name": "ggwpwildlands:tapir/death",
+        "stream": false
+      }
+    ]
+  },
+  "tapir.movement": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:tapir/movement",
+        "stream": false
+      }
+    ]
+  },
+  "toucan.idle": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:toucan/idle",
+        "stream": false
+      }
+    ]
+  },
+  "toucan.warning": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:toucan/warning",
+        "stream": false
+      }
+    ]
+  },
+  "toucan.attack": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:toucan/attack",
+        "stream": false
+      }
+    ]
+  },
+  "toucan.hurt": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:toucan/hurt",
+        "stream": false
+      }
+    ]
+  },
+  "toucan.death": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:toucan/death",
+        "stream": false
+      }
+    ]
+  },
+  "toucan.movement": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:toucan/movement",
+        "stream": false
+      }
+    ]
+  },
+  "monkey.idle": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:monkey/idle",
+        "stream": false
+      }
+    ]
+  },
+  "monkey.warning": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:monkey/warning",
+        "stream": false
+      }
+    ]
+  },
+  "monkey.attack": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:monkey/attack",
+        "stream": false
+      }
+    ]
+  },
+  "monkey.hurt": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:monkey/hurt",
+        "stream": false
+      }
+    ]
+  },
+  "monkey.death": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:monkey/death",
+        "stream": false
+      }
+    ]
+  },
+  "monkey.movement": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:monkey/movement",
+        "stream": false
+      }
+    ]
+  },
+  "frog.idle": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:frog/idle",
+        "stream": false
+      }
+    ]
+  },
+  "frog.warning": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:frog/warning",
+        "stream": false
+      }
+    ]
+  },
+  "frog.attack": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:frog/attack",
+        "stream": false
+      }
+    ]
+  },
+  "frog.hurt": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:frog/hurt",
+        "stream": false
+      }
+    ]
+  },
+  "frog.death": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:frog/death",
+        "stream": false
+      }
+    ]
+  },
+  "frog.movement": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:frog/movement",
+        "stream": false
+      }
+    ]
+  },
+  "caiman.idle": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:caiman/idle",
+        "stream": false
+      }
+    ]
+  },
+  "caiman.warning": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:caiman/warning",
+        "stream": false
+      }
+    ]
+  },
+  "caiman.attack": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:caiman/attack",
+        "stream": false
+      }
+    ]
+  },
+  "caiman.hurt": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:caiman/hurt",
+        "stream": false
+      }
+    ]
+  },
+  "caiman.death": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:caiman/death",
+        "stream": false
+      }
+    ]
+  },
+  "caiman.movement": {
+    "sounds": [
+      {
+        "name": "ggwpwildlands:caiman/movement",
         "stream": false
       }
     ]

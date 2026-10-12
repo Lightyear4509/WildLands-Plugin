@@ -87,4 +87,18 @@ class WildlifeManagerTest {
         verify(event).setCancelled(true);
         when(data.get(any(NamespacedKey.class), eq(PersistentDataType.STRING))).thenReturn("UNSUPPORTED"); assertFalse(WildlifeManager.tagged(pig));
     }
+    @Test void everySpeciesRequiresItsNativeCarrierAndOwnedInteractionsAreBlocked() {
+        var manager = new WildlifeManager(plugin, storage, List.of());
+        for (Species species : Species.values()) {
+            var animal = mock(species.nativeClass()); var data = mock(PersistentDataContainer.class);
+            when(animal.getPersistentDataContainer()).thenReturn(data);
+            if (species == Species.JAGUAR) when(data.has(any(NamespacedKey.class),eq(PersistentDataType.BYTE))).thenReturn(true);
+            else when(data.get(any(NamespacedKey.class),eq(PersistentDataType.STRING))).thenReturn(species.name());
+            assertEquals(Optional.of(species),WildlifeManager.species(animal));
+            var event = mock(org.bukkit.event.player.PlayerInteractEntityEvent.class); when(event.getRightClicked()).thenReturn(animal);
+            manager.interact(event); verify(event).setCancelled(true);
+        }
+        var pig = mock(Pig.class); var data = mock(PersistentDataContainer.class); when(pig.getPersistentDataContainer()).thenReturn(data);
+        when(data.get(any(NamespacedKey.class),eq(PersistentDataType.STRING))).thenReturn("TOUCAN"); assertFalse(WildlifeManager.tagged(pig));
+    }
 }

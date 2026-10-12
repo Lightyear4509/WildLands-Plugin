@@ -1,3 +1,5 @@
+> Historical Jaguar prototype notes. The current seven-species candidate, lower default limits and matching artifacts are documented in [WILDLIFE-EXPANSION.md](WILDLIFE-EXPANSION.md) and [ANIMAL-LIVE-TEST.md](ANIMAL-LIVE-TEST.md).
+
 # Milestone 10: first Jaguar presentation prototype
 
 Historical first checkpoint. The active implementation has advanced to `0.10.0-wildlife.2` with Capybara/Tapir and lower fresh visual defaults; see WILDLIFE-EXPANSION.md. Use matching current plugin, extension and packs. The adapter/fallback principles below still apply, but the old artifact names/counts describe the first prototype.

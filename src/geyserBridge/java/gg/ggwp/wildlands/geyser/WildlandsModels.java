@@ -21,7 +21,7 @@ public final class WildlandsModels implements Extension {
     private final java.util.Map<String, GeyserIntEntityProperty> phaseProperties = new java.util.HashMap<>();
     public WildlandsModels() {
         definitions.put("jaguar", jaguar);
-        for (String species : java.util.List.of("capybara", "tapir")) definitions.put(species, CustomEntityDefinition.of(Identifier.of("ggwpwildlands:" + species)));
+        for (String species : java.util.List.of("capybara", "tapir", "toucan", "monkey", "frog", "caiman")) definitions.put(species, CustomEntityDefinition.of(Identifier.of("ggwpwildlands:" + species)));
     }
     private volatile Method phaseLookup;
     private volatile Method speciesLookup;
@@ -53,9 +53,11 @@ public final class WildlandsModels implements Extension {
         catch (ReflectiveOperationException | RuntimeException unavailable) { return ""; }
     }
     @Subscribe public void spawn(ServerSpawnEntityEvent event) {
-        if (!event.entityType().is(Identifier.of("minecraft:ocelot")) && !event.entityType().is(Identifier.of("minecraft:pig"))) return;
-        String species = species(event.uuid(), event.connection().javaUuid());
-        String base = species.equals("jaguar") ? "minecraft:ocelot" : "minecraft:pig";
+        var connection = event.connection();
+        if (connection == null || !hasPack(connection)) return;
+        String species = species(event.uuid(), connection.javaUuid());
+        String base = switch (species) { case "jaguar" -> "minecraft:ocelot"; case "capybara", "tapir" -> "minecraft:pig";
+            case "toucan" -> "minecraft:parrot"; case "monkey" -> "minecraft:cat"; case "frog" -> "minecraft:frog"; case "caiman" -> "minecraft:turtle"; default -> ""; };
         if (!definitions.containsKey(species) || !event.entityType().is(Identifier.of(base))) return;
         int phase = phase(event.uuid(), event.connection().javaUuid());
         var property = phaseProperties.get(species);

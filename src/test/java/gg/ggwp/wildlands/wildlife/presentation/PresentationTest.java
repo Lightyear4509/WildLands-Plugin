@@ -31,6 +31,10 @@ class PresentationTest {
     @Test void packSettingsRejectMalformedHashesCredentialsAndUnboundedDisplayCounts() {
         assertDoesNotThrow(VisualSettings::disabled);
         assertThrows(IllegalArgumentException.class, () -> new VisualSettings(true, "http://example.com/a.zip", "a".repeat(40), 32));
+        assertDoesNotThrow(() -> new VisualSettings(true, "http://127.0.0.1:8765/wildlands-java.zip", "a".repeat(40), 12));
+        assertThrows(IllegalArgumentException.class, () -> new VisualSettings(true, "http://127.0.0.1.evil.test:8765/a.zip", "a".repeat(40), 12));
+        assertThrows(IllegalArgumentException.class, () -> new VisualSettings(true, "http://192.168.1.10:8765/a.zip", "a".repeat(40), 12));
+        assertThrows(IllegalArgumentException.class, () -> new VisualSettings(true, "http://127.0.0.1/a.zip", "a".repeat(40), 12));
         assertThrows(IllegalArgumentException.class, () -> new VisualSettings(true, "https://user:password@example.com/a.zip", "a".repeat(40), 32));
         assertThrows(IllegalArgumentException.class, () -> new VisualSettings(true, "https://example.com/a.zip", "wrong", 32));
         assertThrows(IllegalArgumentException.class, () -> new VisualSettings(true, "", "a".repeat(40), 32));

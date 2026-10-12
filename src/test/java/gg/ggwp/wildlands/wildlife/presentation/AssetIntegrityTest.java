@@ -34,7 +34,9 @@ class AssetIntegrityTest {
         for (var animation : entity.getAsJsonObject("animations").entrySet()) assertTrue(animations.has(animation.getValue().getAsString()));
         var javaSounds = json(java.resolve("assets/ggwpwildlands/sounds.json"));
         var bedrockSounds = json(bedrock.resolve("sounds/sound_definitions.json")).getAsJsonObject("sound_definitions");
-        for (String cue : List.of("idle", "warning", "attack", "hurt", "death")) {
+        var cues = new ArrayList<>(List.of("idle", "warning", "attack", "hurt", "death"));
+        if (species != gg.ggwp.wildlands.wildlife.Species.JAGUAR) cues.add("movement");
+        for (String cue : cues) {
             assertTrue(javaSounds.has(key + "." + cue)); assertTrue(bedrockSounds.has("ggwpwildlands:" + key + "." + cue));
             for (Path path : List.of(java.resolve("assets/ggwpwildlands/sounds/" + key + "/" + cue + ".ogg"), bedrock.resolve("sounds/" + key + "/" + cue + ".ogg"))) {
                 byte[] bytes = Files.readAllBytes(path); assertTrue(bytes.length > 1000);

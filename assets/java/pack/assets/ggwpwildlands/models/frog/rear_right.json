@@ -1,0 +1,75 @@
+{
+  "textures": {
+    "fur": "ggwpwildlands:entity/frog"
+  },
+  "elements": [
+    {
+      "from": [
+        6.5,
+        6.72,
+        6.5
+      ],
+      "to": [
+        9.5,
+        9.28,
+        9.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        }
+      }
+    }
+  ]
+}

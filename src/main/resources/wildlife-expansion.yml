@@ -1,4 +1,5 @@
 schema-version: 1
+jaguar-max-per-world: 8
 # All species share wildlife.yml's worlds, batch size, loaded and world-wide caps.
 capybara:
   enabled: true
@@ -18,3 +19,49 @@ tapir:
   avoidance-range: 6
   roam-radius: 32
   flee-seconds: 12
+toucan:
+  enabled: true
+  max-per-world: 6
+  max-per-cell: 2
+  health: 6
+  spawn-chance: 0.12
+  avoidance-range: 3
+  roam-radius: 24
+  flee-seconds: 6
+monkey:
+  enabled: true
+  max-per-world: 6
+  max-per-cell: 3
+  health: 12
+  spawn-chance: 0.10
+  avoidance-range: 4
+  roam-radius: 24
+  flee-seconds: 8
+frog:
+  enabled: true
+  max-per-world: 8
+  max-per-cell: 4
+  health: 6
+  spawn-chance: 0.18
+  avoidance-range: 2
+  roam-radius: 12
+  flee-seconds: 5
+caiman:
+  enabled: true
+  max-per-world: 4
+  max-per-cell: 1
+  health: 20
+  spawn-chance: 0.06
+  avoidance-range: 6
+  roam-radius: 24
+  flee-seconds: 12
+  detection-range: 12
+  warning-range: 6
+  engagement-range: 3
+  warning-seconds: 4
+  chase-seconds: 12
+  deterrent-group-size: 3
+  damage: 2
+  bite-range: 1.8
+  bite-seconds: 2
+  fire-radius: 5

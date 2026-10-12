@@ -424,10 +424,10 @@ tools/documentation.
 
 Added at the user's request after completion of Milestones 1–9. This is
 approved scope, not a claim that the full milestone already exists. The
-first optional modeled Jaguar prototype has been expanded with Capybara
-and Tapir. The current animal implementation/testing goal remains in
-progress; additional fauna, comprehensive load checks and the settlement
-stage are not yet claimed complete.
+first optional modeled Jaguar prototype has been expanded with Capybara,
+Tapir, Toucan, Monkey, Frog and Caiman. The current seven-species animal implementation and native preflight
+are ready for collective client testing. Client acceptance remains
+deferred; the settlement stage is still pending.
 
 Settlement infrastructure:
 
@@ -442,7 +442,7 @@ Wildlife expansion:
 
 - Species-specific models, textures, animations, sounds and behavior.
 - Initial proposed roster: upgrade Jaguar presentation; add Capybara
-  and Tapir. Other rainforest species remain future expansion work.
+  and Tapir, now joined by Toucan, Monkey, Frog and Caiman.
 - Jaguar retains stalking, territorial warnings, bounded pursuit, prey
   hunting and fire/group deterrence. Capybara emphasizes wetland groups,
   swimming and avoidance; Tapir emphasizes forest foraging, rest and

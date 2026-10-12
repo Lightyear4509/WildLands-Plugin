@@ -1,0 +1,75 @@
+{
+  "textures": {
+    "fur": "ggwpwildlands:entity/monkey"
+  },
+  "elements": [
+    {
+      "from": [
+        7.25,
+        7.25,
+        1.5
+      ],
+      "to": [
+        8.75,
+        8.75,
+        14.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#fur"
+        }
+      }
+    }
+  ]
+}

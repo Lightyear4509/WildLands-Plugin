@@ -138,6 +138,7 @@ def export_passive(species, palette, frequency, profile):
             shade = rng.randrange(-10, 11)
             texture.putpixel((x, y), tuple(max(0, min(255, channel+shade)) for channel in palette))
     texture.putpixel((63, 63), (18, 16, 12))
+    texture.putpixel((62, 63), (239, 178, 41))
     path = JAVA / f"assets/{NS}/textures/entity/{species}.png"
     texture.save(path)
     shutil.copyfile(path, BEDROCK / f"textures/entity/{species}.png")
@@ -146,14 +147,17 @@ def export_passive(species, palette, frequency, profile):
         cubes = [([-v/2 for v in size], size, False)]
         if name == "head":
             for x in [-size[0]/2+.2, size[0]/2-1]:
-                cubes += [([x, .8, -size[2]/2-.1], [.8, .8, .2], True), ([x, size[1]/2-.5, -.5], [1.5, 1.5, 1.5], False)]
+                cubes.append(([x, .8, -size[2]/2-.1], [.8, .8, .2], True))
+                if species in ["capybara", "tapir", "monkey"]: cubes.append(([x, size[1]/2-.5, -.5], [1.5, 1.5, 1.5], False))
             if species == "tapir": cubes.append(([-1.25, -2, -size[2]/2-2.5], [2.5, 2.5, 3], False))
+            if species == "toucan": cubes.append(([-1.2, -1, -size[2]/2-4], [2.4, 2, 4.5], "beak"))
+            if species == "caiman": cubes.append(([-2.5, -1.4, -size[2]/2-3], [5, 2, 4], False))
         elements, bedrock_cubes = [], []
         for origin, dimensions, accent in cubes:
             directions = ["north", "south", "east", "west", "up", "down"]
-            faces = {face: {"uv": [15.75, 15.75, 16, 16] if accent else [0, 0, 16, 16], "texture": "#fur"} for face in directions}
+            faces = {face: {"uv": [15.5, 15.75, 15.75, 16] if accent == "beak" else [15.75, 15.75, 16, 16] if accent else [0, 0, 16, 16], "texture": "#fur"} for face in directions}
             elements.append({"from": [8+v for v in origin], "to": [8+origin[i]+dimensions[i] for i in range(3)], "faces": faces})
-            uv = {face: {"uv": [63, 63], "uv_size": [1, 1]} for face in directions} if accent else [0, 0]
+            uv = {face: {"uv": [62 if accent == "beak" else 63, 63], "uv_size": [1, 1]} for face in directions} if accent else [0, 0]
             bedrock_cubes.append({"origin": [pivot[i]+origin[i] for i in range(3)], "size": dimensions, "uv": uv})
         write(JAVA / f"assets/{NS}/models/{species}/{name}.json", {"textures": {"fur": f"{NS}:entity/{species}"}, "elements": elements})
         write(JAVA / f"assets/{NS}/items/{species}/{name}.json", {"model": {"type": "minecraft:model", "model": f"{NS}:{species}/{name}"}})
@@ -167,6 +171,12 @@ def export_passive(species, palette, frequency, profile):
     animations["animations"][f"animation.{NS}.{species}.stalk"]["bones"] = {}
     animations["animations"][f"animation.{NS}.{species}.idle"]["bones"] = {"head": {"rotation": ["math.sin(query.life_time*40)*2", 0, 0]}}
     animations["animations"][f"animation.{NS}.{species}.swim"] = {"loop": True, "bones": {name: {"rotation": ["math.sin(query.life_time*320)*12", 0, 0]} for name in list(BONES)[2:6]}}
+    if species == "toucan":
+        animations["animations"][f"animation.{NS}.{species}.walk"]["bones"] = {
+            "front_left": {"rotation": [0, 0, "math.sin(query.life_time*520)*35"]},
+            "front_right": {"rotation": [0, 0, "-math.sin(query.life_time*520)*35"]}}
+    if species == "frog":
+        animations["animations"][f"animation.{NS}.{species}.walk"]["bones"] = {name: {"rotation": ["math.sin(query.life_time*320)*20", 0, 0]} for name in list(BONES)[2:6]}
     write(BEDROCK / f"animations/{species}.animation.json", animations)
     entity = clone("entity/jaguar.entity.json")
     definition = entity["minecraft:client_entity"]["description"]
@@ -177,7 +187,7 @@ def export_passive(species, palette, frequency, profile):
     write(BEDROCK / f"render_controllers/{species}.render_controllers.json", clone("render_controllers/jaguar.render_controllers.json"))
     java_sounds = json.loads((JAVA / f"assets/{NS}/sounds.json").read_text())
     bedrock_sounds = json.loads((BEDROCK / "sounds/sound_definitions.json").read_text())
-    for cue, multiplier, duration in [("idle", 1, .4), ("warning", .7, .6), ("attack", .8, .45), ("hurt", 1.35, .4), ("death", .5, .9)]:
+    for cue, multiplier, duration in [("idle", 1, .4), ("warning", .7, .6), ("attack", .8, .45), ("hurt", 1.35, .4), ("death", .5, .9), ("movement", .35, .2)]:
         t = np.arange(int(22050*duration))/22050
         noise = np.convolve(np.random.default_rng(int(frequency*multiplier)+4509).uniform(-1, 1, len(t)), np.ones(30)/30, mode="same")
         wave = (np.sin(2*math.pi*frequency*multiplier*t + 1.5*np.sin(2*math.pi*19*t))*.22 + noise*.15) * np.sin(math.pi*t/duration)**2
@@ -210,7 +220,11 @@ def canonicalize_ogg(path):
             for _ in range(8): crc = ((crc << 1) ^ (0x04C11DB7 if crc & 0x80000000 else 0)) & 0xFFFFFFFF
         data[offset+22:offset+26] = crc.to_bytes(4, "little")
         offset += length
-    path.write_bytes(data)
+    # Replace atomically: Windows asset indexers may still hold the just-encoded
+    # file open, making an immediate second truncating open fail with EINVAL.
+    temporary = path.with_suffix(".ogg.tmp")
+    temporary.write_bytes(data)
+    temporary.replace(path)
 
 
 if __name__ == "__main__":
@@ -223,13 +237,29 @@ if __name__ == "__main__":
         ([0, 9.6, 0], [12, 10, 19]), ([0, 9.92, -10.24], [7, 7, 8]),
         ([4.48, 3.2, -5.6], [3.5, 6.4, 3.5]), ([-4.48, 3.2, -5.6], [3.5, 6.4, 3.5]),
         ([4.48, 3.2, 6.4], [3.5, 6.4, 3.5]), ([-4.48, 3.2, 6.4], [3.5, 6.4, 3.5]), ([0, 9.6, 10.24], [1, 1, 2])])
+    export_passive("toucan", [29, 33, 39], 750, [
+        ([0, 6.4, 0], [5, 6, 7]), ([0, 9.92, -1.92], [4, 4, 4]),
+        ([2.88, 6.4, 0], [1, 3.5, 7]), ([-2.88, 6.4, 0], [1, 3.5, 7]),
+        ([1.12, 1.6, 0], [1, 3.2, 1]), ([-1.12, 1.6, 0], [1, 3.2, 1]), ([0, 6.4, 4.8], [3, 1, 5])])
+    export_passive("monkey", [106, 75, 46], 350, [
+        ([0, 7.2, 0], [5, 7, 6]), ([0, 10.4, -3.52], [5, 5, 5]),
+        ([2.88, 4, -2.08], [2, 8, 2]), ([-2.88, 4, -2.08], [2, 8, 2]),
+        ([2.88, 2.72, 2.56], [2.5, 5.44, 2.5]), ([-2.88, 2.72, 2.56], [2.5, 5.44, 2.5]), ([0, 7.2, 9.6], [1.5, 1.5, 13])])
+    export_passive("frog", [69, 143, 47], 180, [
+        ([0, 3.2, 0], [5, 3, 5]), ([0, 3.84, -1.92], [5, 3.5, 3]),
+        ([2.56, 1.6, -2.56], [1.5, 3.2, 2]), ([-2.56, 1.6, -2.56], [1.5, 3.2, 2]),
+        ([3.2, 1.28, 2.4], [3, 2.56, 3]), ([-3.2, 1.28, 2.4], [3, 2.56, 3]), ([0, 3.2, 2.72], [.2, .2, .2])])
+    export_passive("caiman", [66, 85, 47], 70, [
+        ([0, 3.52, 0], [12, 4, 16]), ([0, 3.84, -8.8], [7, 3, 10]),
+        ([5.6, 1.6, -3.84], [4, 3.2, 4]), ([-5.6, 1.6, -3.84], [4, 3.2, 4]),
+        ([5.6, 1.6, 4.8], [4, 3.2, 4]), ([-5.6, 1.6, 4.8], [4, 3.2, 4]), ([0, 3.2, 14.4], [4, 3, 14])])
     for root in [JAVA, BEDROCK]:
         for sound in root.rglob("*.ogg"): canonicalize_ogg(sound)
     manifest = json.loads((BEDROCK / "manifest.json").read_text())
     manifest["header"]["name"] = "GGWP Wildlands Wildlife"
-    manifest["header"]["description"] = "Jaguar, Capybara and Tapir; gameplay stays on Paper"
-    manifest["header"]["version"] = manifest["modules"][0]["version"] = [0, 10, 2]
+    manifest["header"]["description"] = "Seven rainforest species; gameplay stays on Paper"
+    manifest["header"]["version"] = manifest["modules"][0]["version"] = [0, 10, 3]
     write(BEDROCK / "manifest.json", manifest)
     metadata = json.loads((JAVA / "pack.mcmeta").read_text())
-    metadata["pack"]["description"] = "GGWP Wildlands — Jaguar, Capybara and Tapir"
+    metadata["pack"]["description"] = "GGWP Wildlands — seven rainforest species"
     write(JAVA / "pack.mcmeta", metadata)

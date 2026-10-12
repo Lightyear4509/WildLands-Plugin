@@ -26,4 +26,15 @@ class WildlifeExpansionSettingsTest {
         visual.set("animate", "false"); assertThrows(IllegalArgumentException.class, () -> VisualSettings.parse(visual));
         assertThrows(IllegalArgumentException.class, () -> new VisualSettings(true, "", "", 12, 1, 32, true));
     }
+    @Test void oldFilesDoNotSilentlyEnableNewFaunaAndPartialPredatorSettingsFail() throws Exception {
+        new ConfigurationManager(directory).load(); var yaml = new YamlConfiguration(); yaml.load(directory.resolve("wildlife-expansion.yml").toFile());
+        for(String species : new String[]{"toucan","monkey","frog","caiman"}) yaml.set(species,null);
+        yaml.set("jaguar-max-per-world",null); var old=WildlifeExpansionSettings.parse(yaml);
+        assertFalse(old.animal(Species.TOUCAN).enabled()); assertFalse(old.animal(Species.CAIMAN).enabled()); assertEquals(32,old.jaguarMaxPerWorld());
+        yaml.load(directory.resolve("wildlife-expansion.yml").toFile()); yaml.set("caiman.detection-range",null); yaml.set("caiman.damage",100);
+        assertThrows(IllegalArgumentException.class,()->WildlifeExpansionSettings.parse(yaml));
+        yaml.load(directory.resolve("wildlife-expansion.yml").toFile());
+        for(String key : new String[]{"detection-range","warning-range","engagement-range","warning-seconds","chase-seconds","damage","bite-range","bite-seconds","fire-radius","deterrent-group-size"}) yaml.set("caiman."+key,null);
+        assertThrows(IllegalArgumentException.class,()->WildlifeExpansionSettings.parse(yaml));
+    }
 }

@@ -17,7 +17,7 @@ public final class WildlifeCommand {
             gg.ggwp.wildlands.wildlife.Species species = gg.ggwp.wildlands.wildlife.Species.JAGUAR;
             if (offset == 1) {
                 try { species = gg.ggwp.wildlands.wildlife.Species.valueOf(args[3].toUpperCase(java.util.Locale.ROOT)); }
-                catch (IllegalArgumentException invalid) { sender.sendMessage("[Wildlands] Species: jaguar, capybara, tapir."); return; }
+                catch (IllegalArgumentException invalid) { sender.sendMessage("[Wildlands] Species: " + java.util.Arrays.stream(gg.ggwp.wildlands.wildlife.Species.values()).map(gg.ggwp.wildlands.wildlife.Species::key).collect(java.util.stream.Collectors.joining(", ")) + "."); return; }
             }
             var world = plugin.getServer().getWorld(args[3 + offset]);
             if (world == null) { sender.sendMessage("[Wildlands] Specify a loaded world."); return; }

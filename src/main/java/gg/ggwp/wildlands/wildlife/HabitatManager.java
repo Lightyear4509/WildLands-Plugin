@@ -14,6 +14,9 @@ public final class HabitatManager {
             case JAGUAR -> jaguar(region);
             case CAPYBARA -> region == Region.WETLANDS || region == Region.FLOODPLAINS || region == Region.TROPICAL_RIVERS;
             case TAPIR -> region == Region.DENSE_RAINFOREST || region == Region.BAMBOO_FORESTS || region == Region.RAINFOREST_HIGHLANDS;
+            case TOUCAN, MONKEY -> region == Region.DENSE_RAINFOREST || region == Region.BAMBOO_FORESTS || region == Region.WATERFALL_VALLEYS;
+            case FROG -> region == Region.WETLANDS || region == Region.FLOODPLAINS || region == Region.TROPICAL_RIVERS || region == Region.WATERFALL_VALLEYS;
+            case CAIMAN -> region == Region.WETLANDS || region == Region.FLOODPLAINS || region == Region.TROPICAL_RIVERS;
         };
     }
     public static long cell(int x, int z) {

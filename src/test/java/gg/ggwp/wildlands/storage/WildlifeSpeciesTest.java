@@ -28,7 +28,7 @@ class WildlifeSpeciesTest {
         try (var db = new Database()) {
             db.open(file); assertEquals(new HashSet<>(records), new HashSet<>(new WildlifeRepository(db).living()));
             var dead = records.get(1).dead(); assertEquals(Species.CAPYBARA, dead.species());
-            new WildlifeRepository(db).saveBatch(List.of(dead)); assertEquals(2, new WildlifeRepository(db).living().size());
+            new WildlifeRepository(db).saveBatch(List.of(dead)); assertEquals(Species.values().length - 1, new WildlifeRepository(db).living().size());
         }
     }
     @Test void unknownPersistedSpeciesFailsClosedInsteadOfBecomingDifferentAnimal() throws Exception {

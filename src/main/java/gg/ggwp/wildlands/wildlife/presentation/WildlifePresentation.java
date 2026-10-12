@@ -18,7 +18,7 @@ import org.bukkit.util.Transformation;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-/** Optional Jaguar prototype. Native mobs remain the only AI, damage and persistence authority. */
+/** Optional species presentation. Native mobs remain the only AI, damage and persistence authority. */
 public final class WildlifePresentation implements Listener {
     public static final UUID PACK_ID = UUID.fromString("e8a78004-5d0b-4c64-bd7a-4f173b691301");
     private static final NamespacedKey TEMP = new NamespacedKey("ggwpwildlands", "wildlife_visual");
@@ -164,7 +164,7 @@ public final class WildlifePresentation implements Listener {
             var settings = plugin.configuration().visuals();
             Location here = view.animal.getLocation();
             here.setPitch(0);
-            if (Math.floorMod(ticks + view.animal.getUniqueId().hashCode(), 600) < settings.animationTicks()) sound(view.animal.getUniqueId(), "idle", view.species == Species.JAGUAR ? Sound.ENTITY_CAT_AMBIENT : Sound.ENTITY_PIG_AMBIENT);
+            if (Math.floorMod(ticks + view.animal.getUniqueId().hashCode(), 600) < settings.animationTicks()) sound(view.animal.getUniqueId(), "idle", gg.ggwp.wildlands.wildlife.WildlifeManager.fallback(view.species, "idle"));
             List<Player> viewers = settings.enabled() ? view.animal.getWorld().getPlayers().stream()
                     .filter(player -> javaReady.contains(player.getUniqueId()) && here.distanceSquared(player.getLocation()) < settings.viewDistance() * settings.viewDistance()).toList() : List.of();
             if (viewers.isEmpty() || modeled++ >= settings.maxAnimals()) { clearDisplays(view); continue; }
@@ -181,23 +181,29 @@ public final class WildlifePresentation implements Listener {
                 for (Player player : viewers) if (view.hiddenFrom.add(player.getUniqueId())) {
                     view.bones.forEach(bone -> player.showEntity(plugin, bone)); player.showEntity(plugin, view.hitbox); player.hideEntity(plugin, view.animal);
                 }
-                boolean moving = here.distanceSquared(view.previous) > .0004;
                 boolean animate = settings.animate() && viewers.stream().anyMatch(player -> here.distanceSquared(player.getLocation()) < 16 * 16);
-                boolean relocate = created || moving || Math.abs(here.getYaw() - view.previous.getYaw()) > 1;
-                for (int index = 0; index < view.bones.size(); index++) {
-                    ItemDisplay bone = view.bones.get(index); if (relocate) bone.teleport(here);
-                    float[] offset = offsets(view.species)[index];
-                    float angle = index >= 2 && index <= 5 ? JaguarAnimation.leg(view.phase, ticks / 20.0, moving && animate, index - 2)
-                            : index == 1 && view.phase == Phase.WARNING ? -.2f : 0;
-                    Quaternionf rotation = new Quaternionf().rotateX(angle);
-                    if (index == 6 && view.species == Species.JAGUAR && animate) rotation.rotateY((float) Math.sin(ticks / 20.0 * 1.6) * .1f);
-                    Transformation transform = new Transformation(new Vector3f(offset[0], offset[1] + (view.species == Species.JAGUAR ? JaguarAnimation.crouch(view.phase) : 0), offset[2]),
-                            rotation, new Vector3f(1), new Quaternionf());
-                    if (!transform.equals(view.transforms.get(index))) { bone.setTransformation(transform); view.transforms.set(index, transform); }
-                }
-                if (relocate) view.hitbox.teleport(here); view.previous = here;
-            } catch (RuntimeException failure) { clearDisplays(view); plugin.report("Jaguar presentation failed; native animal restored", failure); }
+                updateDisplays(view, here, animate, created);
+            } catch (RuntimeException failure) { clearDisplays(view); plugin.report("Wildlife presentation failed; native animal restored", failure); }
         }
+    }
+    private void updateDisplays(View view, Location here, boolean animate, boolean created) {
+        boolean moving = here.distanceSquared(view.previous) > .0004;
+        boolean relocate = created || moving || Math.abs(here.getYaw() - view.previous.getYaw()) > 1;
+        for (int index = 0; index < view.bones.size(); index++) {
+            ItemDisplay bone = view.bones.get(index); if (relocate) bone.teleport(here);
+            float[] offset = offsets(view.species)[index];
+            float angle = index >= 2 && index <= 5 ? JaguarAnimation.leg(view.phase, ticks / 20.0, moving && animate, index - 2)
+                    : index == 1 && view.phase == Phase.WARNING ? -.2f : 0;
+            Quaternionf rotation = new Quaternionf().rotateX(angle);
+            if (view.species == Species.TOUCAN && (index == 2 || index == 3)) {
+                rotation.identity().rotateZ(animate && moving ? (float) Math.sin(ticks / 20.0 * 9) * (index == 2 ? .65f : -.65f) : 0);
+            }
+            if (index == 6 && view.species == Species.JAGUAR && animate) rotation.rotateY((float) Math.sin(ticks / 20.0 * 1.6) * .1f);
+            Transformation transform = new Transformation(new Vector3f(offset[0], offset[1] + (view.species == Species.JAGUAR ? JaguarAnimation.crouch(view.phase) : 0), offset[2]),
+                    rotation, new Vector3f(1), new Quaternionf());
+            if (!transform.equals(view.transforms.get(index))) { bone.setTransformation(transform); view.transforms.set(index, transform); }
+        }
+        if (relocate) view.hitbox.teleport(here); view.previous = here;
     }
     private void createDisplays(View view) {
         try {
@@ -272,6 +278,11 @@ public final class WildlifePresentation implements Listener {
     @EventHandler public void loaded(EntitiesLoadEvent event) { event.getEntities().stream().filter(WildlifePresentation::temporary).forEach(Entity::remove); }
     private static final float[][] CAPYBARA = {{0,.5f,0},{0,.55f,-.5f},{.25f,.14f,-.3f},{-.25f,.14f,-.3f},{.25f,.14f,.3f},{-.25f,.14f,.3f},{0,.5f,.47f}};
     private static final float[][] TAPIR = {{0,.6f,0},{0,.62f,-.64f},{.28f,.2f,-.35f},{-.28f,.2f,-.35f},{.28f,.2f,.4f},{-.28f,.2f,.4f},{0,.6f,.64f}};
-    private static float[][] offsets(Species species) { return switch (species) { case JAGUAR -> OFFSETS; case CAPYBARA -> CAPYBARA; case TAPIR -> TAPIR; }; }
+    private static final float[][] TOUCAN = {{0,.4f,0},{0,.62f,-.12f},{.18f,.4f,0},{-.18f,.4f,0},{.07f,.1f,0},{-.07f,.1f,0},{0,.4f,.3f}};
+    private static final float[][] MONKEY = {{0,.45f,0},{0,.65f,-.22f},{.18f,.25f,-.13f},{-.18f,.25f,-.13f},{.18f,.17f,.16f},{-.18f,.17f,.16f},{0,.45f,.6f}};
+    private static final float[][] FROG = {{0,.2f,0},{0,.24f,-.12f},{.16f,.1f,-.16f},{-.16f,.1f,-.16f},{.2f,.08f,.15f},{-.2f,.08f,.15f},{0,.2f,.17f}};
+    private static final float[][] CAIMAN = {{0,.22f,0},{0,.24f,-.55f},{.35f,.1f,-.24f},{-.35f,.1f,-.24f},{.35f,.1f,.3f},{-.35f,.1f,.3f},{0,.2f,.9f}};
+    private static float[][] offsets(Species species) { return switch (species) { case JAGUAR -> OFFSETS; case CAPYBARA -> CAPYBARA; case TAPIR -> TAPIR;
+        case TOUCAN -> TOUCAN; case MONKEY -> MONKEY; case FROG -> FROG; case CAIMAN -> CAIMAN; }; }
     public String diagnostics() { return "Wildlife visuals: animals=" + animals.size() + "; displays=" + animals.values().stream().mapToInt(v -> v.bones.size()).sum() + "; Java viewers=" + javaReady.size() + "; Bedrock viewers=" + bedrockReady.size() + "; bridge=" + (bridge() != null); }
 }

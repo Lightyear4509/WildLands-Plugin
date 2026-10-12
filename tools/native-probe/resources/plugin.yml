@@ -1,0 +1,8 @@
+name: RosterProbe
+version: '1'
+main: RosterProbe
+api-version: '26.2'
+depend: [GGWPWildlands]
+commands:
+  rosterprobe:
+    permission: ggwpwildlands.admin

@@ -1,6 +1,6 @@
 # Original wildlife prototype assets
 
-The animal expansion now includes project-original Capybara and Tapir shapes, brown textures and synthesized chirp/whistle cues. The exporter additionally canonicalizes Ogg container serials and CRCs for reproducible files. No additional third-party media is copied.
+The animal expansion now includes project-original seven species: Jaguar, Capybara, Tapir, Toucan, Monkey, Frog and Caiman, with independent voxel shapes, 64×64 textures and synthesized cues. The exporter additionally canonicalizes Ogg container serials and CRCs for reproducible files. No additional third-party media is copied.
 
 The Jaguar cuboid model, rosette texture, Java item definitions, Bedrock geometry/animation definitions and synthesized sound cues were authored in this project. No third-party model, texture or animal recording was copied. The synthesis is deliberately stylized; it is not a claim of authentic zoological recording.
 

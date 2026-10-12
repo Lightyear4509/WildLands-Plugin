@@ -12,8 +12,9 @@ public record VisualSettings(boolean enabled, String javaUrl, String javaSha1, i
         if (animationTicks < 4 || animationTicks > 20 || viewDistance < 8 || viewDistance > 64) throw new IllegalArgumentException("Invalid wildlife visual work limits");
         if (!javaUrl.isEmpty()) {
             URI uri = URI.create(javaUrl);
-            if (!"https".equals(uri.getScheme()) || uri.getHost() == null || uri.getUserInfo() != null)
-                throw new IllegalArgumentException("Java pack URL must use HTTPS without credentials");
+            boolean localTest = "http".equals(uri.getScheme()) && "127.0.0.1".equals(uri.getHost()) && uri.getPort() > 0;
+            if ((!"https".equals(uri.getScheme()) && !localTest) || uri.getHost() == null || uri.getUserInfo() != null || uri.getFragment() != null)
+                throw new IllegalArgumentException("Java pack URL must use HTTPS without credentials (literal 127.0.0.1 HTTP with a port is allowed for local tests)");
             if (!javaSha1.matches("[a-fA-F0-9]{40}")) throw new IllegalArgumentException("Java pack SHA-1 must contain 40 hex characters");
         } else if (!javaSha1.isEmpty()) throw new IllegalArgumentException("Pack hash requires a URL");
     }

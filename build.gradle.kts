@@ -3,7 +3,7 @@ plugins {
     id("com.gradleup.shadow") version "9.2.2"
 }
 group = "gg.ggwp.wildlands"
-version = "0.10.0-wildlife.2"
+version = "0.10.0-wildlife.3"
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
@@ -11,6 +11,18 @@ repositories {
     maven("https://repo.opencollab.dev/maven-releases/")
 }
 val geyserBridge = sourceSets.create("geyserBridge")
+val nativeProbe = sourceSets.create("nativeProbe") {
+    java.setSrcDirs(listOf("tools/native-probe/src"))
+    resources.setSrcDirs(listOf("tools/native-probe/resources"))
+}
+configurations.named(nativeProbe.compileOnlyConfigurationName) { extendsFrom(configurations.compileOnly.get()) }
+dependencies { add(nativeProbe.compileOnlyConfigurationName, files(sourceSets.main.get().output)) }
+val nativeProbeJar by tasks.registering(Jar::class) {
+    archiveBaseName.set("Wildlands-Native-Probe")
+    from(nativeProbe.output)
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
+}
 configurations.named(geyserBridge.compileClasspathConfigurationName) {
     resolutionStrategy.force("org.geysermc.event:events:1.1-20230815.153219-4")
 }
@@ -59,6 +71,7 @@ tasks.processResources {
     filesMatching("plugin.yml") { expand("version" to pluginVersion) }
 }
 tasks.test {
+    dependsOn(tasks.named(nativeProbe.compileJavaTaskName))
     useJUnitPlatform()
     jvmArgs("-javaagent:" + mockitoAgent.singleFile.absolutePath, "--enable-native-access=ALL-UNNAMED")
 }
@@ -89,7 +102,8 @@ val releaseBundle by tasks.registering(Zip::class) {
     from(projectDir) { include("MILESTONE-*-REVIEW.md") }
     from("docs") { into("docs") }
     from("assets") { into("assets") }
-    from("tools") { include("generate_wildlife_assets.py", "asset-requirements.txt"); into("asset-tools") }
+    from("tools") { include("generate_wildlife_assets.py", "asset-requirements.txt", "serve_wildlife_pack.py"); into("asset-tools") }
+    from("tools/native-probe") { into("verification-tools/native-probe") }
     from("src/main/resources") { include("*.yml"); exclude("plugin.yml"); into("config-examples") }
 }
 tasks.build { dependsOn(releaseBundle) }

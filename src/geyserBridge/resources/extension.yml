@@ -2,5 +2,5 @@ id: wildlandsmodels
 name: WildlandsModels
 main: gg.ggwp.wildlands.geyser.WildlandsModels
 api: 2.11.0
-version: 0.10.0-wildlife.2
+version: 0.10.0-wildlife.3
 authors: [GGWP]

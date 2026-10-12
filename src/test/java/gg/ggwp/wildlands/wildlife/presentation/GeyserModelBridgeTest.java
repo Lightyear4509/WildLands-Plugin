@@ -23,7 +23,7 @@ class GeyserModelBridgeTest {
             ids.when(() -> Identifier.of(anyString())).thenReturn(identifier);
             factory.when(() -> CustomEntityDefinition.of(any(Identifier.class))).thenReturn(definition);
             var bridge = new WildlandsModels(); bridge.bind(PresentationRegistry.class);
-            var define = mock(GeyserDefineEntitiesEvent.class); bridge.define(define); verify(define, times(3)).register(definition);
+            var define = mock(GeyserDefineEntitiesEvent.class); bridge.define(define); verify(define, times(7)).register(definition);
             var properties = mock(GeyserDefineEntityPropertiesEvent.class);
             when(properties.registerIntegerProperty(any(), any(), eq(0), eq(4), eq(0))).thenReturn(mock(GeyserIntEntityProperty.class));
             bridge.properties(properties);
@@ -66,7 +66,7 @@ class GeyserModelBridgeTest {
             for (var species : gg.ggwp.wildlands.wildlife.Species.values()) {
                 var spawn = mock(ServerSpawnEntityEvent.class); var type = mock(JavaEntityType.class); UUID animal = UUID.randomUUID();
                 when(spawn.uuid()).thenReturn(animal); when(spawn.connection()).thenReturn(connection); when(spawn.entityType()).thenReturn(type);
-                String base = species == gg.ggwp.wildlands.wildlife.Species.JAGUAR ? "minecraft:ocelot" : "minecraft:pig";
+                String base = species.nativeId();
                 doAnswer(call -> call.getArgument(0).equals(identifiers.get(base))).when(type).is(any());
                 PresentationRegistry.publish(animal, 1, species); bridge.spawn(spawn); verify(spawn).definition(definitions.get(species.key()));
                 if (species.passive()) {

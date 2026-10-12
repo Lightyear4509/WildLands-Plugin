@@ -21,7 +21,7 @@ public final class ConfigurationManager {
                 CraftingSettings crafting, FoodSettings food, LandmarkSettings landmarks) {
             this(settings, messages, hydration, environment, seasons, worldgen, wildlife, crafting, food, landmarks, VisualSettings.disabled());
         }
-        public Snapshot { messages = Map.copyOf(messages); java.util.Objects.requireNonNull(hydration); java.util.Objects.requireNonNull(environment); java.util.Objects.requireNonNull(seasons); java.util.Objects.requireNonNull(worldgen); java.util.Objects.requireNonNull(wildlife); java.util.Objects.requireNonNull(crafting); java.util.Objects.requireNonNull(food); java.util.Objects.requireNonNull(landmarks); java.util.Objects.requireNonNull(visuals); }
+        public Snapshot { messages = Map.copyOf(messages); java.util.Objects.requireNonNull(hydration); java.util.Objects.requireNonNull(environment); java.util.Objects.requireNonNull(seasons); java.util.Objects.requireNonNull(worldgen); java.util.Objects.requireNonNull(wildlife); java.util.Objects.requireNonNull(crafting); java.util.Objects.requireNonNull(food); java.util.Objects.requireNonNull(landmarks); java.util.Objects.requireNonNull(visuals); java.util.Objects.requireNonNull(expansion); }
         public String message(String key) { return messages.get("prefix") + messages.get(key); }
     }
     private final Path directory;
